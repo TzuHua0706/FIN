@@ -1,5 +1,5 @@
-#ifndef __ONESCENE_H__
-#define __ONESCENE_H__
+#ifndef __TWOSCENE_H__
+#define __TWOSCENE_H__
 
 #define BOX2D_DEBUG 1
 
@@ -8,28 +8,14 @@
 #include "Common/CButton.h"
 #include "Common/GLES-Render.h"
 
-class CContactListener : public b2ContactListener
-{
-public:
-	cocos2d::Sprite *_targetSprite;
-	bool _bCollisionAir;
-	CContactListener();
-	//碰撞開始
-	virtual void BeginContact(b2Contact* contact);
-	//碰撞結束
-	virtual void EndContact(b2Contact* contact);
-	void setCollisionTarget(cocos2d::Sprite &targetSprite);
-};
-
-class OneScene : public cocos2d::Layer
+class TwoScene : public cocos2d::Layer
 {
 private:
 	b2World* _b2World;
 	b2Body *rectBody;
-	//b2Body *AirBody;
 	cocos2d::Size visibleSize;
 	cocos2d::Vec2 origin;
-	cocos2d::Node * OneBackground;
+	cocos2d::Node * TwoBackground;
 	cocos2d::Point PntLoc;
 	cocos2d::Sprite * PlayerSprite;
 	cocos2d::Sprite * AirSprite;
@@ -38,13 +24,11 @@ private:
 	bool _bAirOpen = false;
 	bool _bPlayerGo = false;
 
-	CContactListener _contactListener;
-
 	GLESDebugDraw* _DebugDraw;
 	virtual void draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags);
 public:
 
-	~OneScene();
+	~TwoScene();
 	// there's no 'id' in cpp, so we recommend returning the class instance pointer
 	static cocos2d::Scene* createScene();
 
@@ -61,8 +45,8 @@ public:
 	void onTouchEnded(cocos2d::Touch *pTouch, cocos2d::Event *pEvent); //觸碰結束事件 
 
 																	   // implement the "static create()" method manually
-	CREATE_FUNC(OneScene);
+	CREATE_FUNC(TwoScene);
 
 };
 
-#endif // __OneScene_SCENE_H__
+#endif // __TwoScene_SCENE_H__

@@ -1,4 +1,4 @@
-#include "OneScene.h"
+#include "ThreeScene.h"
 #include "cocostudio/CocoStudio.h"
 #include "ui/CocosGUI.h"
 
@@ -8,13 +8,13 @@ USING_NS_CC;
 
 using namespace cocostudio::timeline;
 
-Scene* OneScene::createScene()
+Scene* ThreeScene::createScene()
 {
 	// 'scene' is an autorelease object
 	auto scene = Scene::create();
 
 	// 'layer' is an autorelease object
-	auto layer = OneScene::create();
+	auto layer = ThreeScene::create();
 
 	// add layer as a child to scene
 	scene->addChild(layer);
@@ -22,12 +22,12 @@ Scene* OneScene::createScene()
 	// return the scene
 	return scene;
 }
-OneScene::~OneScene()
+ThreeScene::~ThreeScene()
 {
 	if (_b2World != nullptr) delete _b2World;
 }
 
-bool OneScene::init()
+bool ThreeScene::init()
 {
 	visibleSize = Director::getInstance()->getVisibleSize();
 	origin = Director::getInstance()->getVisibleOrigin();
@@ -39,11 +39,11 @@ bool OneScene::init()
 		return false;
 	}
 
-	OneBackground = CSLoader::createNode("One.csb");
-	addChild(OneBackground);
-	PntLoc = OneBackground->getPosition();
+	TwoBackground = CSLoader::createNode("Two.csb");
+	addChild(TwoBackground);
+	PntLoc = TwoBackground->getPosition();
 
-	 //B2World
+	//B2World
 	_b2World = nullptr;
 	b2Vec2 Gravity = b2Vec2(0.0f, -9.8f);	//重力方向
 	bool AllowSleep = true;					//允許睡著
@@ -53,7 +53,7 @@ bool OneScene::init()
 	readSceneFile();
 
 	// 先建立 ballSprite 的 Sprite 並加入場景中
-	PlayerSprite = (Sprite *)OneBackground->getChildByName("player");
+	PlayerSprite = (Sprite *)TwoBackground->getChildByName("player");
 	PlayerSprite->setScale(0.75f);
 	// 設定圖示的位置，稍後必須用程式碼計算跟著動態物體改變位置
 	Point player_loc = PlayerSprite->getPosition();
@@ -102,16 +102,16 @@ bool OneScene::init()
 	}
 
 	_listener1 = EventListenerTouchOneByOne::create();	//創建一個一對一的事件聆聽器
-	_listener1->onTouchBegan = CC_CALLBACK_2(OneScene::onTouchBegan, this);		//加入觸碰開始事件
-	_listener1->onTouchMoved = CC_CALLBACK_2(OneScene::onTouchMoved, this);		//加入觸碰移動事件
-	_listener1->onTouchEnded = CC_CALLBACK_2(OneScene::onTouchEnded, this);		//加入觸碰離開事件
+	_listener1->onTouchBegan = CC_CALLBACK_2(ThreeScene::onTouchBegan, this);		//加入觸碰開始事件
+	_listener1->onTouchMoved = CC_CALLBACK_2(ThreeScene::onTouchMoved, this);		//加入觸碰移動事件
+	_listener1->onTouchEnded = CC_CALLBACK_2(ThreeScene::onTouchEnded, this);		//加入觸碰離開事件
 
 	this->_eventDispatcher->addEventListenerWithSceneGraphPriority(_listener1, this);	//加入剛創建的事件聆聽器
-	this->schedule(CC_SCHEDULE_SELECTOR(OneScene::doStep));
+	this->schedule(CC_SCHEDULE_SELECTOR(ThreeScene::doStep));
 
 	return true;
 }
-void OneScene::doStep(float dt) {
+void ThreeScene::doStep(float dt) {
 	_fGameTime += dt;
 	int velocityIterations = 8; // 速度迭代次數
 								// 位置迭代次數，迭代次數一般設定為8~10 越高越真實但效率越差
@@ -132,6 +132,7 @@ void OneScene::doStep(float dt) {
 		if (body->GetType() == b2BodyType::b2_dynamicBody && body != rectBody) {
 			float x = body->GetPosition().x * PTM_RATIO;
 			float y = body->GetPosition().y * PTM_RATIO;
+
 			if (x > visibleSize.width || x < 0 || y >  visibleSize.height || y < 0) {
 				if (body->GetUserData() != NULL) {
 					Sprite* spriteData = (Sprite *)body->GetUserData();
@@ -145,37 +146,7 @@ void OneScene::doStep(float dt) {
 		else body = body->GetNext(); //否則就繼續更新下一個Body
 	}
 }
-CContactListener::CContactListener()
-{
-	_bCollisionAir = false;
-}
-void CContactListener::setCollisionTarget(cocos2d::Sprite &targetSprite)
-{
-	_targetSprite = &targetSprite;
-}
-
-//
-// 只要是兩個 body 的 fixtures 碰撞，就會呼叫這個函式
-//
-void CContactListener::BeginContact(b2Contact* contact)
-{
-	b2Body* BodyA = contact->GetFixtureA()->GetBody();
-	b2Body* BodyB = contact->GetFixtureB()->GetBody();
-	if (BodyA->GetUserData() == _targetSprite) {
-		_bCollisionAir = true;
-	}
-	else if (BodyB->GetUserData() == _targetSprite) {
-		_bCollisionAir = true;
-	}
-}
-
-//碰撞結束
-void CContactListener::EndContact(b2Contact* contact)
-{
-	b2Body* BodyA = contact->GetFixtureA()->GetBody();
-	b2Body* BodyB = contact->GetFixtureB()->GetBody();
-}
-void OneScene::readSceneFile() {
+void ThreeScene::readSceneFile() {
 	char tmp[20] = "";
 
 	// 產生 EdgeShape 的 body
@@ -191,12 +162,12 @@ void OneScene::readSceneFile() {
 	b2FixtureDef fixtureDef; // 產生 Fixture
 	fixtureDef.shape = &edgeShape;
 
-	for (size_t i = 1; i <= 2; i++) {
+	for (size_t i = 1; i <= 8; i++) {
 		// 產生所需要的 Sprite file name int plist 
 		// 此處取得的都是相對於 csbRoot 所在位置的相對座標
 		// 在計算 edgeShape 的相對應座標時，必須進行轉換
 		sprintf(tmp, "wall_%d", i);
-		auto edgeSprite = (Sprite *)OneBackground->getChildByName(tmp);
+		auto edgeSprite = (Sprite *)TwoBackground->getChildByName(tmp);
 		Size ts = edgeSprite->getContentSize();
 		Point loc = edgeSprite->getPosition();
 		float angle = edgeSprite->getRotation();
@@ -218,7 +189,7 @@ void OneScene::readSceneFile() {
 		modelMatrix.m[3] = PntLoc.x + loc.x; //設定 Translation，自己的加上父親的
 		modelMatrix.m[7] = PntLoc.y + loc.y; //設定 Translation，自己的加上父親的
 
-		// 產生兩個端點
+											 // 產生兩個端點
 		wep1.x = lep1.x * modelMatrix.m[0] + lep1.y * modelMatrix.m[1] + modelMatrix.m[3];
 		wep1.y = lep1.x * modelMatrix.m[4] + lep1.y * modelMatrix.m[5] + modelMatrix.m[7];
 		wep2.x = lep2.x * modelMatrix.m[0] + lep2.y * modelMatrix.m[1] + modelMatrix.m[3];
@@ -229,7 +200,7 @@ void OneScene::readSceneFile() {
 		body->CreateFixture(&fixtureDef);
 	}
 }
-void OneScene::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
+void ThreeScene::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
 {
 	Director* director = Director::getInstance();
 
@@ -238,7 +209,7 @@ void OneScene::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
 	_b2World->DrawDebugData();
 	director->popMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
 }
-bool OneScene::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
+bool ThreeScene::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 	Point touchLoc = pTouch->getLocation();
 	BeginLoc = touchLoc;
 	/*_ParticleControl._emitterPt = touchLoc;
@@ -246,39 +217,21 @@ bool OneScene::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 	_bAirOpen = true;
 	return true;
 }
-void OneScene::onTouchMoved(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
+void ThreeScene::onTouchMoved(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 	Point touchLoc = pTouch->getLocation();
 	if (_bAirOpen) {
 	}
 }
-void OneScene::onTouchEnded(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
+void ThreeScene::onTouchEnded(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 	Point touchLoc = pTouch->getLocation();
 	if (_bAirOpen) {
 		CreateAir(BeginLoc, touchLoc);
 		_bAirOpen = false;
 	}
 }
-void OneScene::CreateAir(cocos2d::Point Bpos, cocos2d::Point Epos) {
+void ThreeScene::CreateAir(cocos2d::Point Bpos, cocos2d::Point Epos) {
 	float dx = Epos.x - Bpos.x;
 	float dy = Epos.y - Bpos.y;
-	/*AirSprite = Sprite::createWithSpriteFrameName("dount01.png");
-	AirSprite->setScale(0.5f);
-	this->addChild(AirSprite, 2);
-	b2BodyDef bodyDef;
-	bodyDef.type = b2_dynamicBody;
-	bodyDef.userData = AirSprite;
-	bodyDef.position.Set((Bpos.x) / PTM_RATIO, (Bpos.y) / PTM_RATIO);
-	b2Body *AirBody = _b2World->CreateBody(&bodyDef);
-	AirBody->SetGravityScale(0.0f);
-	b2CircleShape ballShape;
-	Size ballsize = AirSprite->getContentSize();
-	ballShape.m_radius = 0.5f * (ballsize.width - 4) *0.5f / PTM_RATIO;
-	b2FixtureDef fixtureDef;
-	fixtureDef.shape = &ballShape;
-	fixtureDef.restitution = 0.75f;
-	fixtureDef.density = 5.0f;
-	fixtureDef.friction = 0.15f;
-	AirBody->CreateFixture(&fixtureDef);*/
 	if (abs(dx) >= abs(dy)) {
 		if (dx >= 0) {
 			for (dx; dx >= 0; ) {

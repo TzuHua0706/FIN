@@ -2,6 +2,9 @@
 #include "cocostudio/CocoStudio.h"
 #include "ui/CocosGUI.h"
 #include "OneScene.h"
+#include "TwoScene.h"
+#include "ThreeScene.h"
+#include "FourScene.h"
 
 USING_NS_CC;
 
@@ -62,6 +65,9 @@ bool StartScene::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent){
 	Point touchLoc = pTouch->getLocation();
 	if (OnePage->touchesBegin(touchLoc)) {
 		auto scene = OneScene::createScene();
+		//auto scene = TwoScene::createScene();
+		//auto scene = ThreeScene::createScene();
+		//auto scene = FourScene::createScene();
 		Director::sharedDirector()->replaceScene(TransitionFade::create(0.5f, scene));
 	}
 	return true;

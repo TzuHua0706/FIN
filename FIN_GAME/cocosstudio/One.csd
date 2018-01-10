@@ -17,7 +17,7 @@
             <FileData Type="PlistSubImage" Path="bg64.png" Plist="box2d.plist" />
             <BlendFunc Src="1" Dst="771" />
           </AbstractNodeData>
-          <AbstractNodeData Name="wall_1" ActionTag="2118943672" Tag="15" IconVisible="False" LeftMargin="1027.5007" RightMargin="-1431.5007" TopMargin="-221.1837" BottomMargin="213.1837" ctype="SpriteObjectData">
+          <AbstractNodeData Name="wall_2" ActionTag="2118943672" Tag="15" IconVisible="False" LeftMargin="1027.5007" RightMargin="-1431.5007" TopMargin="-221.1837" BottomMargin="213.1837" ctype="SpriteObjectData">
             <Size X="404.0000" Y="8.0000" />
             <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
             <Position X="1229.5007" Y="217.1837" />
@@ -28,7 +28,7 @@
             <FileData Type="PlistSubImage" Path="wall02.png" Plist="box2d.plist" />
             <BlendFunc Src="1" Dst="771" />
           </AbstractNodeData>
-          <AbstractNodeData Name="wall_2" ActionTag="1990401954" Tag="16" IconVisible="False" LeftMargin="-144.0703" RightMargin="-259.9297" TopMargin="-569.5924" BottomMargin="561.5924" ctype="SpriteObjectData">
+          <AbstractNodeData Name="wall_1" ActionTag="1990401954" Tag="16" IconVisible="False" LeftMargin="-144.0703" RightMargin="-259.9297" TopMargin="-569.5924" BottomMargin="561.5924" ctype="SpriteObjectData">
             <Size X="404.0000" Y="8.0000" />
             <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
             <Position X="57.9297" Y="565.5924" />
