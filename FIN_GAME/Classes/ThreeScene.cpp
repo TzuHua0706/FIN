@@ -1,26 +1,27 @@
 #include "ThreeScene.h"
 #include "cocostudio/CocoStudio.h"
 #include "ui/CocosGUI.h"
+#include "ui/UIWidget.h"
 #include "FourScene.h"
+#include "StopScene.h"
 
 #define PTM_RATIO 32.0f
 
 USING_NS_CC;
 
 using namespace cocostudio::timeline;
+using namespace ui;
 
-Scene* ThreeScene::createScene()
+Scene* ThreeScene::createScene(const int score)
 {
-	// 'scene' is an autorelease object
 	auto scene = Scene::create();
-
-	// 'layer' is an autorelease object
 	auto layer = ThreeScene::create();
-
-	// add layer as a child to scene
+	char Score[20] = "";
+	sprintf(Score, "%d", score);
+	layer->score = score;
+	auto score_text = (cocos2d::ui::Text *)layer->ThreeBackground->getChildByName("score");
+	score_text->setText(Score);
 	scene->addChild(layer);
-
-	// return the scene
 	return scene;
 }
 ThreeScene::~ThreeScene()
@@ -53,6 +54,10 @@ bool ThreeScene::init()
 	MagnetBtn->setButtonInfo("new_magnet_normal.png", "new_magnet_on.png", "new_magnet_normal.png", Point(1250.0f, 685.0f), true);
 	MagnetBtn->setScale(1.0f);
 	this->addChild(MagnetBtn, 10);
+	StopBtn = CButton::create();
+	StopBtn->setButtonInfo("new_stop.png", "new_stop_on.png", "new_stop.png", Point(30.0f, 30.0f), true);
+	StopBtn->setScale(0.8f);
+	this->addChild(StopBtn, 10);
 	SkipBtn = CButton::create();
 	SkipBtn->setButtonInfo("skip_normal.png", "skip_on.png", "skip_normal.png", Point(1230.0f, 30.0f), true);
 	SkipBtn->setScale(0.8f);
@@ -71,42 +76,7 @@ bool ThreeScene::init()
 	setupLightJoint();
 	setupBridgeSensor();
 	setupWinSensor();
-
-	// 先建立 ballSprite 的 Sprite 並加入場景中
-	auto PlayerSprite = (Sprite *)ThreeBackground->getChildByName("player");
-	PlayerSprite->setScale(0.75f);
-	// 設定圖示的位置，稍後必須用程式碼計算跟著動態物體改變位置
-	Point player_loc = PlayerSprite->getPosition();
-	// 建立一個簡單的動態球體
-	b2BodyDef bodyDef;// 先以結構 b2BodyDef 宣告一個 Body 的變數
-	bodyDef.type = b2_dynamicBody; // 設定為動態物體
-	bodyDef.userData = PlayerSprite;// 設定 Sprite 為動態物體的顯示圖示
-	bodyDef.position.Set(player_loc.x / PTM_RATIO, player_loc.y / PTM_RATIO);
-	// 以 bodyDef 在 b2World 中建立實體並傳回該實體的指標
-	playerBody = _b2World->CreateBody(&bodyDef);
-	// 設定該物體的外型
-	// 根據 Sprite 圖形的大小來設定圓形的半徑
-	b2PolygonShape rectShape;
-	//b2CircleShape ballShape;
-	Size ts = PlayerSprite->getContentSize();
-	//float scale = PlayerSprite->getScale();
-	float scaleX = PlayerSprite->getScaleX();	// 讀取矩形畫框有對 X 軸縮放
-	float scaleY = PlayerSprite->getScaleY();	// 讀取矩形畫框有對 Y 軸縮放
-	float bw = (ts.width - 4)* scaleX;
-	float bh = (ts.height - 4)* scaleY;
-	// 設定剛體的範圍是一個 BOX （可以縮放成矩形）
-	rectShape.SetAsBox(bw*0.5f / PTM_RATIO, bh*0.5f / PTM_RATIO);
-	//ballShape.m_radius = 0.5f * (ts.width - 4) *0.5f*scale / PTM_RATIO;
-	// 以 b2FixtureDef  結構宣告剛體結構變數，並設定剛體的相關物理係數
-	b2FixtureDef fixtureDef;
-	//fixtureDef.shape = &ballShape;// 指定剛體的外型為圓形
-	fixtureDef.shape = &rectShape;
-	fixtureDef.restitution = 0.5f;// 設定彈性係數
-	fixtureDef.density = 0.1f;// 設定密度
-	fixtureDef.friction = 0.01f;// 設定摩擦係數
-	playerBody->CreateFixture(&fixtureDef);// 在 Body 上產生這個剛體的設定
-
-	_contactListener.setCollisionTargetPlayer(*PlayerSprite);
+	CreatePlayer();
 
 	if (BOX2D_DEBUG) {
 		//DebugDrawInit
@@ -138,6 +108,7 @@ bool ThreeScene::init()
 void ThreeScene::doStep(float dt) {
 	_fGameTime += dt;
 	_fCarTime += dt;
+	_fcloudTime += dt;
 	auto lightSprite = (Sprite *)ThreeBackground->getChildByName("light");
 	if (lightSprite->getPositionX() < 1163) {
 		_bCarGo = false;
@@ -145,10 +116,36 @@ void ThreeScene::doStep(float dt) {
 	}
 	else { _bCarGo = true; }
 	if (_fCarTime >= 3 && _bCarGo && _bCarOpen) {
-		_bCarOpen = false;
 		setupCar();
 	}
-	if (NewMagnetBody != NULL)
+	if (!_bCarOpen && _fcloudTime>=0.5f) {
+		_fcloudTime = 0;
+		auto CarCloudSprite = Sprite::createWithSpriteFrameName("spark.png");
+		CarCloudSprite->setScale(1.0f);
+		CarCloudSprite->setBlendFunc(BlendFunc::ADDITIVE);
+		this->addChild(CarCloudSprite, 2);
+		auto locSprite = (Sprite *)ThreeBackground->getChildByName("car");
+		Size  carsize = CarCloudSprite->getContentSize();
+		float carscale = CarCloudSprite->getScale();
+		Size  size = CarCloudSprite->getContentSize();
+		float scale = CarCloudSprite->getScale();
+		auto loc = carBody->GetPosition();
+		b2BodyDef sensorBodyDef;
+		sensorBodyDef.position.Set(loc.x + carsize.width * carscale / PTM_RATIO, loc.y - carsize.height *0.3f * carscale / PTM_RATIO);
+		sensorBodyDef.type = b2_dynamicBody;
+		sensorBodyDef.userData = CarCloudSprite;
+		b2Body *cloudBody = _b2World->CreateBody(&sensorBodyDef);
+		cloudBody->SetGravityScale(-0.1f);
+		b2PolygonShape sensorShape;
+		sensorShape.SetAsBox(size.width *0.5f * scale / PTM_RATIO, size.height*0.5f*scale / PTM_RATIO);
+		b2FixtureDef SensorFixtureDef;
+		SensorFixtureDef.shape = &sensorShape;
+		SensorFixtureDef.isSensor = true;	// 設定為 Sensor
+		SensorFixtureDef.density = 0; // 故意設定成這個值，方便碰觸時候的判斷
+		cloudBody->CreateFixture(&SensorFixtureDef);
+		cloudBody->ApplyForce(b2Vec2(rand() % 51 - 25, 50 + rand() % 30), loc, true);
+	}
+	if (NewMagnetBody != NULL && MagnetBody != NULL)
 	{
 		if (MagnetBody->GetPosition().y < NewMagnetBody->GetPosition().y)
 			MagnetBody->SetTransform(b2Vec2(MagnetBody->GetPosition().x, (MagnetBody->GetPosition().y) + dt * 30), MagnetBody->GetAngle());
@@ -170,7 +167,7 @@ void ThreeScene::doStep(float dt) {
 			}
 		}
 		// 跑出螢幕外面就讓物體從 b2World 中移除
-		if (body->GetType() == b2BodyType::b2_dynamicBody && body != playerBody) {
+		if (body->GetType() == b2BodyType::b2_dynamicBody && body != playerBody && body != carBody && body != wheelBody_2 && body != dynamicwheelBody && body->GetFixtureList()->IsSensor()!=true) {
 			float x = body->GetPosition().x * PTM_RATIO;
 			float y = body->GetPosition().y * PTM_RATIO;
 			Sprite* spriteData = (Sprite *)body->GetUserData();
@@ -180,16 +177,56 @@ void ThreeScene::doStep(float dt) {
 					spriteData->setVisible(false);
 					this->removeChild(spriteData);
 				}
-				if (body == dynamicwheelBody) { 
-					_bCarOpen = true;
-					_fCarTime = 0;
-				}
 				_b2World->DestroyBody(body);
 				body = NULL;
 			}
 			else if (!spriteData->isVisible()) {
 				this->removeChild(spriteData);
 				_b2World->DestroyBody(body);
+				body = NULL;
+			}
+			else body = body->GetNext(); //否則就繼續更新下一個Body
+		}
+		//車死亡
+		else if (body == dynamicwheelBody || body == wheelBody_2 || body == carBody) {
+			float x = body->GetPosition().x * PTM_RATIO;
+			float y = body->GetPosition().y * PTM_RATIO;
+			if (x > visibleSize.width || x < 0 || y >  visibleSize.height || y < 0 || _contactListener._bCarAccident) {
+				if (body->GetUserData() != NULL) {
+					Sprite* spriteData = (Sprite *)body->GetUserData();
+					if (y < 0 || _contactListener._bCarAccident>0) {
+						CreateGhost(spriteData->getPosition(), 1); 
+						_contactListener._bCarAccident = false;
+					}
+					spriteData->setVisible(false);
+					this->removeChild(spriteData);
+					_contactListener._carsprite = nullptr;
+				}
+				_b2World->DestroyBody(body);
+				dynamicwheelBody = NULL;
+				wheelBody_2 = NULL;
+				carBody = NULL;
+				body = NULL;
+				_icloud = 0;
+				_bCarOpen = true;
+				_fCarTime = 0;
+			}
+			else body = body->GetNext(); //否則就繼續更新下一個Body
+		}
+		//死亡
+		else if (body == playerBody) {
+			float x = body->GetPosition().x * PTM_RATIO;
+			float y = body->GetPosition().y * PTM_RATIO;
+			if (x > visibleSize.width || x < 0 || y < 0 || _contactListener._bPlayerAccident) {
+				_contactListener._bPlayerAccident = false;
+				if (body->GetUserData() != NULL) {
+					Sprite* spriteData = (Sprite *)body->GetUserData();
+					CreateGhost(spriteData->getPosition(), 0);
+					spriteData->setVisible(false);
+					this->removeChild(spriteData);
+				}
+				_b2World->DestroyBody(body);
+				playerBody = NULL;
 				body = NULL;
 			}
 			else body = body->GetNext(); //否則就繼續更新下一個Body
@@ -217,14 +254,12 @@ void CContactListener_Three::setCollisionTarget(cocos2d::Sprite &targetSprite)
 {
 	if (_HeadtargetSprite == NULL) {
 		_HeadtargetSprite = new AirDiet_Three;
-		_HeadtargetSprite->_bAir = true;
 		_HeadtargetSprite->_sprite = &targetSprite;
 		_HeadtargetSprite->_NexttargetSprite = NULL;
 		_NewtargetSprite = _HeadtargetSprite;
 	}
 	else {
 		struct AirDiet_Three * Current = new AirDiet_Three;
-		Current->_bAir = true;
 		Current->_sprite = &targetSprite;
 		Current->_NexttargetSprite = NULL;
 		if (_NewtargetSprite == NULL)for (_NewtargetSprite = _HeadtargetSprite; _NewtargetSprite->_NexttargetSprite != NULL; _NewtargetSprite = _NewtargetSprite->_NexttargetSprite) {}
@@ -240,15 +275,13 @@ void CContactListener_Three::BeginContact(b2Contact* contact)
 {
 	b2Body* BodyA = contact->GetFixtureA()->GetBody();
 	b2Body* BodyB = contact->GetFixtureB()->GetBody();
-	if (BodyB->GetUserData() != _carsprite&&BodyA->GetUserData() != _carsprite) {
+	if (BodyB->GetUserData() != _carsprite && BodyA->GetUserData()){
 		for (_NewtargetSprite = _HeadtargetSprite; _NewtargetSprite != NULL; _NewtargetSprite = _NewtargetSprite->_NexttargetSprite) {
-			if (BodyA->GetUserData() == _NewtargetSprite->_sprite && _NewtargetSprite->_bAir) {
+			if (BodyA->GetUserData() == _NewtargetSprite->_sprite && BodyA->GetGravityScale() == -1) {
 				_NewtargetSprite->_sprite->setVisible(false);
-				_NewtargetSprite->_bAir = false;
 			}
-			else if (BodyB->GetUserData() == _NewtargetSprite->_sprite && _NewtargetSprite->_bAir) {
+			else if (BodyB->GetUserData() == _NewtargetSprite->_sprite && BodyB->GetGravityScale() == -1) {
 				_NewtargetSprite->_sprite->setVisible(false);
-				_NewtargetSprite->_bAir = false;
 			}
 		}
 	}
@@ -259,6 +292,20 @@ void CContactListener_Three::BeginContact(b2Contact* contact)
 	if (BodyA->GetFixtureList()->GetDensity() == -10000.0f) {
 		if (BodyB->GetUserData() == _Playersprite)
 			win = true;
+	}
+	if (BodyA->GetUserData() == _Playersprite) {
+		if (BodyB->GetUserData() == _carsprite && _carsprite != nullptr) {
+			_bPlayerAccident = true;
+			_bCarAccident = true;
+			_carsprite = nullptr;
+		}
+	}
+	if (BodyA->GetUserData() == _carsprite && _carsprite != nullptr) {
+		if (BodyB->GetUserData() == _Playersprite) {
+			_bPlayerAccident = true;
+			_bCarAccident = true;
+			_carsprite = nullptr;
+		}
 	}
 }
 
@@ -565,7 +612,7 @@ void ThreeScene::setupRopeJoint() {
 	float locAnchor = 0.5f*(size[0].height - 5) / PTM_RATIO;
 	b2RevoluteJointDef revJoint;
 	revJoint.bodyA = ropeHeadBody;
-	revJoint.localAnchorA.Set(-sizeHead.width*scaleHeadX*0.5f / PTM_RATIO, -sizeHead.height*scaleHeadX*0.5f / PTM_RATIO);
+	revJoint.localAnchorA.Set(-sizeHead.width*scaleHeadX*0.5f / PTM_RATIO, 0);
 	revJoint.bodyB = ropeBody[0];
 	revJoint.localAnchorB.Set(0, locAnchor);
 	_b2World->CreateJoint(&revJoint);
@@ -579,7 +626,7 @@ void ThreeScene::setupRopeJoint() {
 	revJoint.bodyA = ropeBody[49];
 	revJoint.localAnchorA.Set(0, -locAnchor);
 	revJoint.bodyB = ropeEndBody;
-	revJoint.localAnchorB.Set(sizeEnd.width*scaleEndX*0.5f / PTM_RATIO, 0);
+	revJoint.localAnchorB.Set(sizeEnd.width*scaleEndX*0.5f / PTM_RATIO, sizeEnd.height*scaleEndY*0.5f / PTM_RATIO);
 	_b2World->CreateJoint(&revJoint);
 }
 void ThreeScene::setupBridgeSensor() {
@@ -638,7 +685,7 @@ void ThreeScene::setupCar() {
 	dynamicbodyDef.type = b2_dynamicBody;
 	dynamicbodyDef.position.Set(locwheel.x / PTM_RATIO, locwheel.y / PTM_RATIO);
 	dynamicbodyDef.userData = wheelSprite_2;
-	auto wheelBody_2 = _b2World->CreateBody(&dynamicbodyDef);
+	wheelBody_2 = _b2World->CreateBody(&dynamicbodyDef);
 	ballShape.m_radius = (sizewheel.width - 4) *0.5f*scalewheel / PTM_RATIO;
 	fixtureDef.shape = &ballShape;
 	fixtureDef.restitution = 0.0f;// 設定彈性係數
@@ -658,7 +705,7 @@ void ThreeScene::setupCar() {
 	dynamicbodyDef.type = b2_dynamicBody;
 	dynamicbodyDef.position.Set(loccar.x / PTM_RATIO, loccar.y / PTM_RATIO);
 	dynamicbodyDef.userData = carSprite;
-	auto carBody = _b2World->CreateBody(&dynamicbodyDef);
+	carBody = _b2World->CreateBody(&dynamicbodyDef);
 	b2PolygonShape boxShape;
 	boxShape.SetAsBox(-1*(sizecar.width - 4)*scalecarX*0.5f / PTM_RATIO, (sizecar.height - 4)*scalecarY*0.5f / PTM_RATIO);
 	fixtureDef.shape = &boxShape;
@@ -678,6 +725,7 @@ void ThreeScene::setupCar() {
 	JointDef.Initialize(wheelBody_2, dynamicwheelBody, wheelBody_2->GetPosition(), dynamicwheelBody->GetPosition());
 	_b2World->CreateJoint(&JointDef);
 
+	_bCarOpen = false;
 }
 void ThreeScene::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
 {
@@ -705,6 +753,12 @@ bool ThreeScene::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 		AirBtn->closebtn();
 	}
 	if (SkipBtn->touchesBegin(touchLoc)) {
+		_bAirOpen = false;
+		AirBtn->closebtn();
+		_bMagnetOpen = false;
+		MagnetBtn->closebtn();
+	}
+	if (StopBtn->touchesBegin(touchLoc)) {
 		_bAirOpen = false;
 		AirBtn->closebtn();
 		_bMagnetOpen = false;
@@ -740,6 +794,59 @@ void ThreeScene::onTouchEnded(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 	}
 	if (SkipBtn->touchesEnded(touchLoc)) {
 		nextScene();
+	}
+	if (StopBtn->touchesEnded(touchLoc)) {
+		stopScene();
+	}
+}
+void ThreeScene::CreatePlayer() {
+	auto locSprite = (Sprite *)ThreeBackground->getChildByName("player");
+	Point loc = locSprite->getPosition();
+	PlayerSprite = Sprite::createWithSpriteFrameName("new_ballon.png");
+	PlayerSprite->setScale(0.75f);
+	PlayerSprite->setVisible(true);
+	this->addChild(PlayerSprite, 2);
+	b2BodyDef bodyDef;
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.userData = PlayerSprite;
+	bodyDef.position.Set(PntLoc.x + loc.x / PTM_RATIO, PntLoc.y + loc.y / PTM_RATIO);
+	playerBody = _b2World->CreateBody(&bodyDef);
+	b2CircleShape ballShape;
+	Size ballsize = PlayerSprite->getContentSize();
+	ballShape.m_radius = 0.75f * (ballsize.width - 4) *0.5f / PTM_RATIO;
+	b2FixtureDef fixtureDef;
+	fixtureDef.shape = &ballShape;
+	fixtureDef.restitution = 0.5f;
+	fixtureDef.density = 0.1f;
+	fixtureDef.friction = 0.15f;
+	playerBody->CreateFixture(&fixtureDef);
+
+	_contactListener.setCollisionTargetPlayer(*PlayerSprite);
+}
+void ThreeScene::CreateGhost(Point loc, int who) {
+	switch (who) {
+	case 0:
+		if (ghostSprite == nullptr) {
+			ghostSprite = Sprite::createWithSpriteFrameName("new_ghost.png");
+			ghostSprite->setScale(0.75f);
+			ghostSprite->setPosition(loc);
+			this->addChild(ghostSprite, 2);
+			auto MoveAction = cocos2d::MoveTo::create(3.0f, Point(30, 685));
+			auto callback = CallFunc::create(this, callfunc_selector(ThreeScene::ghostFinished));
+			ghostSprite->runAction(Sequence::create(MoveAction, callback, NULL));
+		}
+		break;
+	case 1:
+		if (carghostSprite == nullptr) {
+			carghostSprite = Sprite::createWithSpriteFrameName("new_ghost.png");
+			carghostSprite->setScale(0.75f);
+			carghostSprite->setPosition(loc);
+			this->addChild(carghostSprite, 2);
+			auto MoveAction = cocos2d::MoveTo::create(3.0f, Point(30, 685));
+			auto callback = CallFunc::create(this, callfunc_selector(ThreeScene::carghostFinished));
+			carghostSprite->runAction(Sequence::create(MoveAction, callback, NULL));
+		}
+		break;
 	}
 }
 void ThreeScene::CreateAir() {
@@ -786,9 +893,11 @@ void ThreeScene::CreateMagnet(Point loc) {
 	b2FixtureDef fixtureDef;
 	fixtureDef.shape = &boxShape;
 	NewMagnetBody->CreateFixture(&fixtureDef);
-	b2PrismaticJointDef JointDef;
-	JointDef.Initialize(NewMagnetBody, MagnetBody, NewMagnetBody->GetPosition(), b2Vec2((NewMagnetBody->GetPosition().x) - (MagnetBody->GetPosition().x), (NewMagnetBody->GetPosition().y) - (MagnetBody->GetPosition().y)));
-	_b2World->CreateJoint(&JointDef);
+	if (MagnetBody != NULL) {
+		b2PrismaticJointDef JointDef;
+		JointDef.Initialize(NewMagnetBody, MagnetBody, NewMagnetBody->GetPosition(), b2Vec2((NewMagnetBody->GetPosition().x) - (MagnetBody->GetPosition().x), (NewMagnetBody->GetPosition().y) - (MagnetBody->GetPosition().y)));
+		_b2World->CreateJoint(&JointDef);
+	}
 }
 void ThreeScene::nextScene() {
 	// 先將這個 SCENE 的 Update(這裡使用 OnFrameMove, 從 schedule update 中移出)
@@ -796,7 +905,35 @@ void ThreeScene::nextScene() {
 	//SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("mainscene.plist");
 	// 上面這行何時需要放在這裡稍後會說明
 	// 設定場景切換的特效
-	TransitionFade *pageTurn = TransitionFade::create(1.0f, FourScene::createScene());
+	TransitionFade *pageTurn = TransitionFade::create(1.0f, FourScene::createScene(score));
 	Director::getInstance()->replaceScene(pageTurn);
 	//SimpleAudioEngine::getInstance()->stopBackgroundMusic();
+}
+void ThreeScene::stopScene() {
+	RenderTexture *renderTexture = RenderTexture::create(visibleSize.width, visibleSize.height);
+	renderTexture->begin();
+	this->getParent()->visit();
+	renderTexture->end();
+	auto scene = StopScene::createScene(renderTexture, score, 3);
+	Director::sharedDirector()->pushScene(scene);
+}
+void ThreeScene::ghostFinished() {
+	_fGameTime = 0;
+	CreatePlayer();
+	score++;
+	char Score[20] = "";
+	sprintf(Score, "%d", score);
+	auto score_text = (cocos2d::ui::Text *)ThreeBackground->getChildByName("score");
+	score_text->setText(Score);
+	this->removeChild(ghostSprite);
+	ghostSprite = nullptr;
+}
+void ThreeScene::carghostFinished() {
+	score++;
+	char Score[20] = "";
+	sprintf(Score, "%d", score);
+	auto score_text = (cocos2d::ui::Text *)ThreeBackground->getChildByName("score");
+	score_text->setText(Score);
+	this->removeChild(carghostSprite);
+	carghostSprite = nullptr;
 }

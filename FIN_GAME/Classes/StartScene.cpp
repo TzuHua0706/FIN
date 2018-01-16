@@ -64,9 +64,9 @@ void StartScene::doStep(float dt) {
 bool StartScene::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent){
 	Point touchLoc = pTouch->getLocation();
 	if (StartBtn->touchesBegin(touchLoc)) {
-		auto scene = OneScene::createScene();
+		auto scene = OneScene::createScene(0);
 		//auto scene = TwoScene::createScene();
-		//auto scene = ThreeScene::createScene();
+		//auto scene = ThreeScene::createScene(0);
 		//auto scene = FourScene::createScene();
 		Director::sharedDirector()->replaceScene(TransitionFade::create(0.5f, scene));
 	}

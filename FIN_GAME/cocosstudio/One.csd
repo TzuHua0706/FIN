@@ -39,11 +39,11 @@
             <FileData Type="PlistSubImage" Path="new_glass.png" Plist="new_img.plist" />
             <BlendFunc Src="1" Dst="771" />
           </AbstractNodeData>
-          <AbstractNodeData Name="player" ActionTag="-276714408" Tag="57" IconVisible="False" LeftMargin="21.5059" RightMargin="-86.5059" TopMargin="-622.6864" BottomMargin="557.6864" ctype="SpriteObjectData">
+          <AbstractNodeData Name="player" ActionTag="-276714408" VisibleForFrame="False" Tag="57" IconVisible="False" LeftMargin="25.2531" RightMargin="-90.2531" TopMargin="-626.4332" BottomMargin="561.4332" ctype="SpriteObjectData">
             <Size X="65.0000" Y="65.0000" />
             <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
-            <Position X="54.0059" Y="590.1864" />
-            <Scale ScaleX="0.4561" ScaleY="0.4561" />
+            <Position X="57.7531" Y="593.9332" />
+            <Scale ScaleX="0.7500" ScaleY="0.7500" />
             <CColor A="255" R="255" G="255" B="255" />
             <PrePosition />
             <PreSize X="0.0000" Y="0.0000" />
@@ -77,21 +77,23 @@
             <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
             <Position X="30.0000" Y="685.0001" />
             <Scale ScaleX="0.7500" ScaleY="0.7500" />
-            <CColor A="255" R="255" G="249" B="202" />
+            <CColor A="255" R="255" G="255" B="255" />
             <PrePosition />
             <PreSize X="0.0000" Y="0.0000" />
             <FileData Type="PlistSubImage" Path="new_ghost.png" Plist="new_img.plist" />
             <BlendFunc Src="1" Dst="771" />
           </AbstractNodeData>
-          <AbstractNodeData Name="score" ActionTag="1592029172" Tag="151" IconVisible="False" LeftMargin="55.0000" RightMargin="-70.0000" TopMargin="-700.5000" BottomMargin="669.5000" LabelText="0" ctype="TextBMFontObjectData">
-            <Size X="15.0000" Y="31.0000" />
-            <AnchorPoint ScaleY="0.5000" />
-            <Position X="55.0000" Y="685.0000" />
+          <AbstractNodeData Name="score" ActionTag="-52402577" Tag="166" IconVisible="False" LeftMargin="58.0000" RightMargin="-72.0000" TopMargin="-697.5000" BottomMargin="672.5000" FontSize="24" LabelText="0" ShadowOffsetX="2.0000" ShadowOffsetY="-2.0000" ctype="TextObjectData">
+            <Size X="14.0000" Y="25.0000" />
+            <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
+            <Position X="65.0000" Y="685.0000" />
             <Scale ScaleX="1.0000" ScaleY="1.0000" />
             <CColor A="255" R="0" G="0" B="0" />
             <PrePosition />
             <PreSize X="0.0000" Y="0.0000" />
-            <LabelBMFontFile_CNB Type="Normal" Path="couriernew32.fnt" Plist="" />
+            <FontResource Type="Normal" Path="Marker Felt.ttf" Plist="" />
+            <OutlineColor A="255" R="255" G="0" B="0" />
+            <ShadowColor A="255" R="110" G="110" B="110" />
           </AbstractNodeData>
         </Children>
       </ObjectData>

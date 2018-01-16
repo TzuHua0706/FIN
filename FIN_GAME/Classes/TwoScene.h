@@ -21,7 +21,6 @@ struct water_Two
 };
 struct AirDiet_Two {
 	cocos2d::Sprite * _sprite;
-	bool _bAir = false;
 	struct AirDiet_Two * _NexttargetSprite;
 };
 class CContactListener_Two : public b2ContactListener
@@ -44,6 +43,7 @@ class TwoScene : public cocos2d::Layer
 {
 private:
 	CButton * SkipBtn;
+	CButton * StopBtn;
 	CButton * AirBtn;
 	CButton * MagnetBtn;
 	b2World* _b2World;
@@ -56,6 +56,8 @@ private:
 	cocos2d::Point PntLoc;
 	cocos2d::Sprite * PlayerSprite;
 	cocos2d::Sprite * NewMagnetSprite;
+	cocos2d::Sprite * ghostSprite = nullptr;
+	int score = 0;
 	float _fGameTime = 0;
 	float _fWaterTime = 0;
 	bool _bAirOpen = false;
@@ -74,13 +76,14 @@ public:
 
 	~TwoScene();
 	// there's no 'id' in cpp, so we recommend returning the class instance pointer
-	static cocos2d::Scene* createScene();
+	static cocos2d::Scene* createScene(const int score);
 
 	// Here's a difference. Method 'init' in cocos2d-x returns bool, instead of returning 'id' in cocos2d-iphone
 	virtual bool init();
 	void doStep(float dt);
 
 	void nextScene();
+	void stopScene();
 	void readSceneFile();
 	void setupRopeJoint();
 	void setupPulleyJoint();
@@ -88,6 +91,9 @@ public:
 	void CreateAir();
 	void CreateWater();
 	void CreateMagnet(cocos2d::Point loc); //磁鐵
+	void CreatePlayer();
+	void CreateGhost(cocos2d::Point loc);
+	void ghostFinished();
 
 	cocos2d::EventListenerTouchOneByOne *_listener1;
 	bool onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent); //觸碰開始事件

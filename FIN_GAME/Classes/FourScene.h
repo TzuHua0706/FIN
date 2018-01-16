@@ -21,7 +21,6 @@ struct water_Four
 };
 struct AirDiet_Four {
 	cocos2d::Sprite * _sprite;
-	bool _bAir = false;
 	struct AirDiet_Four * _NexttargetSprite;
 };
 class CContactListener_Four : public b2ContactListener
@@ -30,7 +29,10 @@ public:
 	struct AirDiet_Four * _HeadtargetSprite = NULL;
 	struct AirDiet_Four * _NewtargetSprite;
 	cocos2d::Sprite * _Playersprite;
+	cocos2d::Sprite * BirdSprite[5];
 	bool win = false;
+	bool _bBird = false;
+	bool _bPlayerAccident = false;
 
 	CContactListener_Four();
 	//碰撞開始
@@ -39,11 +41,13 @@ public:
 	virtual void EndContact(b2Contact* contact);
 	void setCollisionTarget(cocos2d::Sprite &targetSprite);
 	void setCollisionTargetPlayer(cocos2d::Sprite &targetSprite);
+	void setCollisionTargetBird(int i, cocos2d::Sprite &targetSprite);
 };
 class FourScene : public cocos2d::Layer
 {
 private:
 	CButton * SkipBtn;
+	CButton * StopBtn;
 	CButton * AirBtn;
 	CButton * MagnetBtn;
 	b2World* _b2World;
@@ -57,8 +61,13 @@ private:
 	cocos2d::Node * FourBackground;
 	cocos2d::Point PntLoc;
 	cocos2d::Sprite * PlayerSprite;
+	cocos2d::Sprite * birdSprite[5];
 	cocos2d::Sprite * NewMagnetSprite;
 	cocos2d::Sprite * fishSprite;
+	cocos2d::Sprite * ghostSprite = nullptr;
+	cocos2d::Sprite * fishghostSprite = nullptr;
+	cocos2d::Sprite * birdghostSprite = nullptr;
+	int score = 0;
 	float _fGameTime = 0;
 	float _fFishTime = 0;
 	float _fCreateFishTime = 0;
@@ -82,13 +91,14 @@ public:
 
 	~FourScene();
 	// there's no 'id' in cpp, so we recommend returning the class instance pointer
-	static cocos2d::Scene* createScene();
+	static cocos2d::Scene* createScene(const int score);
 
 	// Here's a difference. Method 'init' in cocos2d-x returns bool, instead of returning 'id' in cocos2d-iphone
 	virtual bool init();
 	void doStep(float dt);
 
 	void StartScene();
+	void stopScene();
 	void readSceneFile();
 	void setupWinSensor();
 	void setupRopeJoint();
@@ -97,6 +107,11 @@ public:
 	void CreateFish();
 	void CreateAir();
 	void CreateMagnet(cocos2d::Point loc); //磁鐵
+	void CreatePlayer();
+	void CreateGhost(cocos2d::Point loc, int who); //0氣球死 1魚死 2鳥死
+	void ghostFinished();
+	void fishghostFinished();
+	void birdghostFinished();
 
 	cocos2d::EventListenerTouchOneByOne *_listener1;
 	bool onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent); //觸碰開始事件

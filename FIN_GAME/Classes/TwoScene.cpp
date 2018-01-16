@@ -1,26 +1,28 @@
 #include "TwoScene.h"
 #include "cocostudio/CocoStudio.h"
 #include "ui/CocosGUI.h"
+#include "ui/UIWidget.h"
 #include "ThreeScene.h"
+#include "StopScene.h"
 
 #define PTM_RATIO 32.0f
 
 USING_NS_CC;
 
 using namespace cocostudio::timeline;
+using namespace ui;
 
-Scene* TwoScene::createScene()
+
+Scene* TwoScene::createScene(const int score)
 {
-	// 'scene' is an autorelease object
 	auto scene = Scene::create();
-
-	// 'layer' is an autorelease object
 	auto layer = TwoScene::create();
-
-	// add layer as a child to scene
+	char Score[20] = "";
+	sprintf(Score, "%d", score);
+	layer->score = score;
+	auto score_text = (cocos2d::ui::Text *)layer->TwoBackground->getChildByName("score");
+	score_text->setText(Score);
 	scene->addChild(layer);
-
-	// return the scene
 	return scene;
 }
 TwoScene::~TwoScene()
@@ -53,6 +55,10 @@ bool TwoScene::init()
 	MagnetBtn->setButtonInfo("new_magnet_normal.png", "new_magnet_on.png", "new_magnet_normal.png", Point(1250.0f, 685.0f), true);
 	MagnetBtn->setScale(1.0f);
 	this->addChild(MagnetBtn, 10);
+	StopBtn = CButton::create();
+	StopBtn->setButtonInfo("new_stop.png", "new_stop_on.png", "new_stop.png", Point(30.0f, 30.0f), true);
+	StopBtn->setScale(0.8f);
+	this->addChild(StopBtn, 10);
 	SkipBtn = CButton::create();
 	SkipBtn->setButtonInfo("skip_normal.png", "skip_on.png", "skip_normal.png", Point(1230.0f, 30.0f), true);
 	SkipBtn->setScale(0.8f);
@@ -69,43 +75,7 @@ bool TwoScene::init()
 	setupRopeJoint();
 	setupPulleyJoint();
 	setupWinSensor();
-
-	// 先建立 ballSprite 的 Sprite 並加入場景中
-	PlayerSprite = (Sprite *)TwoBackground->getChildByName("player");
-	PlayerSprite->setScale(0.75f);
-	// 設定圖示的位置，稍後必須用程式碼計算跟著動態物體改變位置
-	Point player_loc = PlayerSprite->getPosition();
-	// 建立一個簡單的動態球體
-	b2BodyDef bodyDef;// 先以結構 b2BodyDef 宣告一個 Body 的變數
-	bodyDef.type = b2_dynamicBody; // 設定為動態物體
-	bodyDef.userData = PlayerSprite;// 設定 Sprite 為動態物體的顯示圖示
-	bodyDef.position.Set(player_loc.x / PTM_RATIO, player_loc.y / PTM_RATIO);
-	// 以 bodyDef 在 b2World 中建立實體並傳回該實體的指標
-	playerBody = _b2World->CreateBody(&bodyDef);
-	// 設定該物體的外型
-	// 根據 Sprite 圖形的大小來設定圓形的半徑
-	b2PolygonShape rectShape;
-	//b2CircleShape ballShape;
-	Size ts = PlayerSprite->getContentSize();
-	//float scale = PlayerSprite->getScale();
-	float scaleX = PlayerSprite->getScaleX();	// 讀取矩形畫框有對 X 軸縮放
-	float scaleY = PlayerSprite->getScaleY();	// 讀取矩形畫框有對 Y 軸縮放
-	float bw = (ts.width - 4)* scaleX;
-	float bh = (ts.height - 4)* scaleY;
-	// 設定剛體的範圍是一個 BOX （可以縮放成矩形）
-	rectShape.SetAsBox(bw*0.5f / PTM_RATIO, bh*0.5f / PTM_RATIO);
-	//ballShape.m_radius = 0.5f * (ts.width - 4) *0.5f*scale / PTM_RATIO;
-	// 以 b2FixtureDef  結構宣告剛體結構變數，並設定剛體的相關物理係數
-	b2FixtureDef fixtureDef;
-	//fixtureDef.shape = &ballShape;// 指定剛體的外型為圓形
-	fixtureDef.shape = &rectShape;
-	fixtureDef.restitution = 0.5f;// 設定彈性係數
-	fixtureDef.density = 0.1f;// 設定密度
-	fixtureDef.friction = 0.01f;// 設定摩擦係數
-	playerBody->CreateFixture(&fixtureDef);// 在 Body 上產生這個剛體的設定
-
-	_contactListener.setCollisionTargetPlayer(*PlayerSprite);
-
+	CreatePlayer();
 
 	if (BOX2D_DEBUG) {
 		//DebugDrawInit
@@ -180,6 +150,23 @@ void TwoScene::doStep(float dt) {
 			}
 			else body = body->GetNext(); //否則就繼續更新下一個Body
 		}
+		//死亡
+		else if (body == playerBody) {
+			float x = body->GetPosition().x * PTM_RATIO;
+			float y = body->GetPosition().y * PTM_RATIO;
+			if (x > visibleSize.width || x < 0 || y < 0) {
+				if (body->GetUserData() != NULL) {
+					Sprite* spriteData = (Sprite *)body->GetUserData();
+					CreateGhost(spriteData->getPosition());
+					spriteData->setVisible(false);
+					this->removeChild(spriteData);
+				}
+				_b2World->DestroyBody(body);
+				playerBody = NULL;
+				body = NULL;
+			}
+			else body = body->GetNext(); //否則就繼續更新下一個Body
+		}
 		else body = body->GetNext(); //否則就繼續更新下一個Body
 	}
 	if (_contactListener.win) {
@@ -193,14 +180,12 @@ void CContactListener_Two::setCollisionTarget(cocos2d::Sprite &targetSprite)
 {
 	if (_HeadtargetSprite == NULL) {
 		_HeadtargetSprite = new AirDiet_Two;
-		_HeadtargetSprite->_bAir = true;
 		_HeadtargetSprite->_sprite = &targetSprite;
 		_HeadtargetSprite->_NexttargetSprite = NULL;
 		_NewtargetSprite = _HeadtargetSprite;
 	}
 	else {
 		struct AirDiet_Two * Current = new AirDiet_Two;
-		Current->_bAir = true;
 		Current->_sprite = &targetSprite;
 		Current->_NexttargetSprite = NULL;
 		if (_NewtargetSprite == NULL)for (_NewtargetSprite = _HeadtargetSprite; _NewtargetSprite->_NexttargetSprite != NULL; _NewtargetSprite = _NewtargetSprite->_NexttargetSprite) {}
@@ -219,14 +204,12 @@ void CContactListener_Two::BeginContact(b2Contact* contact)
 {
 	b2Body* BodyA = contact->GetFixtureA()->GetBody();
 	b2Body* BodyB = contact->GetFixtureB()->GetBody();
-	for (_NewtargetSprite = _HeadtargetSprite; _NewtargetSprite!= NULL; _NewtargetSprite = _NewtargetSprite->_NexttargetSprite) {
-		if (BodyA->GetUserData() == _NewtargetSprite->_sprite && _NewtargetSprite->_bAir) {
+	for (_NewtargetSprite = _HeadtargetSprite; _NewtargetSprite != NULL; _NewtargetSprite = _NewtargetSprite->_NexttargetSprite) {
+		if (BodyA->GetUserData() == _NewtargetSprite->_sprite && BodyA->GetGravityScale() == -1) {
 			_NewtargetSprite->_sprite->setVisible(false);
-			_NewtargetSprite->_bAir = false;
 		}
-		else if (BodyB->GetUserData() == _NewtargetSprite->_sprite && _NewtargetSprite->_bAir) {
+		else if (BodyB->GetUserData() == _NewtargetSprite->_sprite && BodyB->GetGravityScale() == -1) {
 			_NewtargetSprite->_sprite->setVisible(false);
-			_NewtargetSprite->_bAir = false;
 		}
 	}
 	if (BodyA->GetFixtureList()->GetDensity() == -10000.0f) {
@@ -514,6 +497,12 @@ bool TwoScene::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 		_bMagnetOpen = false;
 		MagnetBtn->closebtn();
 	}
+	if (StopBtn->touchesBegin(touchLoc)) {
+		_bAirOpen = false;
+		AirBtn->closebtn();
+		_bMagnetOpen = false;
+		MagnetBtn->closebtn();
+	}
 	if (MagnetBtn->touchesBegin(touchLoc)) {
 		_bAirOpen = false;
 		AirBtn->closebtn();
@@ -548,6 +537,44 @@ void TwoScene::onTouchEnded(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 	}
 	if (SkipBtn->touchesEnded(touchLoc)) {
 		nextScene();
+	}
+	if (StopBtn->touchesEnded(touchLoc)) {
+		stopScene();
+	}
+}
+void TwoScene::CreatePlayer() {
+	auto locSprite = (Sprite *)TwoBackground->getChildByName("player");
+	Point loc = locSprite->getPosition();
+	PlayerSprite = Sprite::createWithSpriteFrameName("new_ballon.png");
+	PlayerSprite->setScale(0.75f);
+	PlayerSprite->setVisible(true);
+	this->addChild(PlayerSprite, 2);
+	b2BodyDef bodyDef;
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.userData = PlayerSprite;
+	bodyDef.position.Set(PntLoc.x + loc.x / PTM_RATIO, PntLoc.y + loc.y / PTM_RATIO);
+	playerBody = _b2World->CreateBody(&bodyDef);
+	b2CircleShape ballShape;
+	Size ballsize = PlayerSprite->getContentSize();
+	ballShape.m_radius = 0.75f * (ballsize.width - 4) *0.5f / PTM_RATIO;
+	b2FixtureDef fixtureDef;
+	fixtureDef.shape = &ballShape;
+	fixtureDef.restitution = 0.5f;
+	fixtureDef.density = 0.1f;
+	fixtureDef.friction = 0.15f;
+	playerBody->CreateFixture(&fixtureDef);
+
+	_contactListener.setCollisionTargetPlayer(*PlayerSprite);
+}
+void TwoScene::CreateGhost(Point loc) {
+	if (ghostSprite == nullptr) {
+		ghostSprite = Sprite::createWithSpriteFrameName("new_ghost.png");
+		ghostSprite->setScale(0.75f);
+		ghostSprite->setPosition(loc);
+		this->addChild(ghostSprite, 2);
+		auto MoveAction = cocos2d::MoveTo::create(3.0f, Point(30, 685));
+		auto callback = CallFunc::create(this, callfunc_selector(TwoScene::ghostFinished));
+		ghostSprite->runAction(Sequence::create(MoveAction, callback, NULL));
 	}
 }
 void TwoScene::CreateAir() {
@@ -642,8 +669,27 @@ void TwoScene::nextScene() {
 	//SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("mainscene.plist");
 	// 上面這行何時需要放在這裡稍後會說明
 	// 設定場景切換的特效
-	TransitionFade *pageTurn = TransitionFade::create(1.0f, ThreeScene::createScene());
+	TransitionFade *pageTurn = TransitionFade::create(1.0f, ThreeScene::createScene(score));
 	Director::getInstance()->replaceScene(pageTurn);
 	//SimpleAudioEngine::getInstance()->stopBackgroundMusic();
-
+}
+void TwoScene::stopScene() {
+	RenderTexture *renderTexture = RenderTexture::create(visibleSize.width, visibleSize.height);
+	renderTexture->begin();
+	this->getParent()->visit();
+	renderTexture->end();
+	auto scene = StopScene::createScene(renderTexture, score, 2);
+	Director::sharedDirector()->pushScene(scene);
+}
+void TwoScene::ghostFinished() {
+	_fGameTime = 0;
+	_bPlayerGo = false;
+	CreatePlayer();
+	score++;
+	char Score[20] = "";
+	sprintf(Score, "%d", score);
+	auto score_text = (cocos2d::ui::Text *)TwoBackground->getChildByName("score");
+	score_text->setText(Score);
+	this->removeChild(ghostSprite);
+	ghostSprite = nullptr;
 }

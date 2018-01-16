@@ -6,7 +6,7 @@
       <ObjectData Name="Node" Tag="70" ctype="GameNodeObjectData">
         <Size X="0.0000" Y="0.0000" />
         <Children>
-          <AbstractNodeData Name="bg" CanEdit="False" ActionTag="-1751951237" Tag="145" IconVisible="False" RightMargin="-1280.0000" TopMargin="-720.0000" ctype="SpriteObjectData">
+          <AbstractNodeData Name="bg" ActionTag="-1751951237" Tag="145" IconVisible="False" RightMargin="-1280.0000" TopMargin="-720.0000" ctype="SpriteObjectData">
             <Size X="1280.0000" Y="720.0000" />
             <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
             <Position X="640.0000" Y="360.0000" />
@@ -94,11 +94,11 @@
             <FileData Type="PlistSubImage" Path="new people_1.png" Plist="new_img.plist" />
             <BlendFunc Src="1" Dst="771" />
           </AbstractNodeData>
-          <AbstractNodeData Name="player" ActionTag="-1095326772" Tag="164" IconVisible="False" LeftMargin="17.9476" RightMargin="-82.9476" TopMargin="-640.2147" BottomMargin="575.2147" ctype="SpriteObjectData">
+          <AbstractNodeData Name="player" ActionTag="-1095326772" VisibleForFrame="False" Tag="164" IconVisible="False" LeftMargin="17.9476" RightMargin="-82.9476" TopMargin="-640.2147" BottomMargin="575.2147" ctype="SpriteObjectData">
             <Size X="65.0000" Y="65.0000" />
             <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
             <Position X="50.4476" Y="607.7147" />
-            <Scale ScaleX="0.4561" ScaleY="0.4561" />
+            <Scale ScaleX="0.7500" ScaleY="0.7500" />
             <CColor A="255" R="255" G="255" B="255" />
             <PrePosition />
             <PreSize X="0.0000" Y="0.0000" />
@@ -468,26 +468,28 @@
             <FileData Type="PlistSubImage" Path="new_win.png" Plist="new_img.plist" />
             <BlendFunc Src="1" Dst="771" />
           </AbstractNodeData>
-          <AbstractNodeData Name="score" ActionTag="-1152427930" Tag="157" IconVisible="False" LeftMargin="55.0000" RightMargin="-70.0000" TopMargin="-700.5000" BottomMargin="669.5000" LabelText="0" ctype="TextBMFontObjectData">
-            <Size X="15.0000" Y="31.0000" />
-            <AnchorPoint ScaleY="0.5000" />
-            <Position X="55.0000" Y="685.0000" />
-            <Scale ScaleX="1.0000" ScaleY="1.0000" />
-            <CColor A="255" R="0" G="0" B="0" />
-            <PrePosition />
-            <PreSize X="0.0000" Y="0.0000" />
-            <LabelBMFontFile_CNB Type="Normal" Path="couriernew32.fnt" Plist="" />
-          </AbstractNodeData>
           <AbstractNodeData Name="new_ghost" ActionTag="-809360333" Tag="158" IconVisible="False" LeftMargin="-9.0000" RightMargin="-69.0000" TopMargin="-724.0001" BottomMargin="646.0001" ctype="SpriteObjectData">
             <Size X="78.0000" Y="78.0000" />
             <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
             <Position X="30.0000" Y="685.0001" />
             <Scale ScaleX="0.7500" ScaleY="0.7500" />
-            <CColor A="255" R="255" G="249" B="202" />
+            <CColor A="255" R="255" G="255" B="255" />
             <PrePosition />
             <PreSize X="0.0000" Y="0.0000" />
             <FileData Type="PlistSubImage" Path="new_ghost.png" Plist="new_img.plist" />
             <BlendFunc Src="1" Dst="771" />
+          </AbstractNodeData>
+          <AbstractNodeData Name="score" ActionTag="-78217518" Tag="165" IconVisible="False" LeftMargin="58.0000" RightMargin="-72.0000" TopMargin="-697.5000" BottomMargin="672.5000" FontSize="24" LabelText="0" ShadowOffsetX="2.0000" ShadowOffsetY="-2.0000" ctype="TextObjectData">
+            <Size X="14.0000" Y="25.0000" />
+            <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
+            <Position X="65.0000" Y="685.0000" />
+            <Scale ScaleX="1.0000" ScaleY="1.0000" />
+            <CColor A="255" R="0" G="0" B="0" />
+            <PrePosition />
+            <PreSize X="0.0000" Y="0.0000" />
+            <FontResource Type="Normal" Path="Marker Felt.ttf" Plist="" />
+            <OutlineColor A="255" R="255" G="0" B="0" />
+            <ShadowColor A="255" R="110" G="110" B="110" />
           </AbstractNodeData>
         </Children>
       </ObjectData>

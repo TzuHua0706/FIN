@@ -21,7 +21,6 @@ struct water_Three
 };
 struct AirDiet_Three {
 	cocos2d::Sprite * _sprite;
-	bool _bAir = false;
 	struct AirDiet_Three * _NexttargetSprite;
 };
 class CContactListener_Three : public b2ContactListener
@@ -29,9 +28,11 @@ class CContactListener_Three : public b2ContactListener
 public:
 	struct AirDiet_Three * _HeadtargetSprite = NULL;
 	struct AirDiet_Three * _NewtargetSprite;
-	cocos2d::Sprite * _Playersprite;
-	cocos2d::Sprite * _carsprite;
+	cocos2d::Sprite * _Playersprite = nullptr;
+	cocos2d::Sprite * _carsprite = nullptr;
 	int _iBridgeNum = 0;
+	bool _bCarAccident = false;
+	bool _bPlayerAccident = false;
 	bool win = false;
 
 	CContactListener_Three();
@@ -47,25 +48,33 @@ class ThreeScene : public cocos2d::Layer
 {
 private:
 	CButton * SkipBtn;
+	CButton * StopBtn;
 	CButton * AirBtn;
 	CButton * MagnetBtn;
 	b2World* _b2World;
-	b2Body *playerBody;
+	b2Body *playerBody = NULL;
 	b2Body *MagnetBody = NULL;
 	b2Body *NewMagnetBody;
 	b2Body *dynamicwheelBody = NULL;
+	b2Body *wheelBody_2 = NULL;
+	b2Body *carBody = NULL;
 	cocos2d::Size visibleSize;
 	cocos2d::Vec2 origin;
 	cocos2d::Node * ThreeBackground;
 	cocos2d::Point PntLoc;
+	cocos2d::Sprite * PlayerSprite;
 	cocos2d::Sprite * NewMagnetSprite;
+	cocos2d::Sprite * ghostSprite = nullptr;
+	cocos2d::Sprite * carghostSprite = nullptr;
+	int _icloud = 0;
+	int score = 0;
+	float _fcloudTime = 1;
 	float _fGameTime = 0;
 	float _fCarTime = 0;
 	bool _bAirOpen = false;
 	bool _bMagnetOpen = false;
-	bool _bPlayerGo = false;
-	bool _bCarOpen = true;
-	bool _bCarGo = false;
+	bool _bCarOpen = true; //車子存不存在(true-不存在、false-已存在)
+	bool _bCarGo = false; //車子能否生成、燈的位子
 
 	CContactListener_Three _contactListener;
 	struct AirDraw_Three * HeadAir;
@@ -77,13 +86,14 @@ public:
 
 	~ThreeScene();
 	// there's no 'id' in cpp, so we recommend returning the class instance pointer
-	static cocos2d::Scene* createScene();
+	static cocos2d::Scene* createScene(const int score);
 
 	// Here's a difference. Method 'init' in cocos2d-x returns bool, instead of returning 'id' in cocos2d-iphone
 	virtual bool init();
 	void doStep(float dt);
 
 	void nextScene();
+	void stopScene();
 	void readSceneFile();
 	void setupWinSensor();
 	void setupRopeJoint();
@@ -93,6 +103,10 @@ public:
 	void setupCar();
 	void CreateAir();
 	void CreateMagnet(cocos2d::Point loc); //磁鐵
+	void CreatePlayer();
+	void CreateGhost(cocos2d::Point loc , int who); //0氣球死 1車死
+	void ghostFinished();
+	void carghostFinished();
 
 	cocos2d::EventListenerTouchOneByOne *_listener1;
 	bool onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent); //觸碰開始事件
