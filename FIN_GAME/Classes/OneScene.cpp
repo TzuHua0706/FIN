@@ -1,6 +1,7 @@
 #include "OneScene.h"
 #include "cocostudio/CocoStudio.h"
 #include "ui/CocosGUI.h"
+#include "TwoScene.h"
 
 #define PTM_RATIO 32.0f
 
@@ -43,6 +44,20 @@ bool OneScene::init()
 	addChild(OneBackground);
 	PntLoc = OneBackground->getPosition();
 
+	//Button
+	AirBtn = CButton::create();
+	AirBtn->setButtonInfo("new_cloud_normal.png", "new_cloud_on.png", "new_cloud.png", Point(1180.0f, 685.0f), true);
+	AirBtn->setScale(1.0f);
+	this->addChild(AirBtn, 10);
+	MagnetBtn = CButton::create();
+	MagnetBtn->setButtonInfo("new_magnet_normal.png", "new_magnet_on.png", "new_magnet_normal.png", Point(1250.0f, 685.0f), false);
+	MagnetBtn->setScale(1.0f);
+	this->addChild(MagnetBtn, 10);
+	SkipBtn = CButton::create();
+	SkipBtn->setButtonInfo("skip_normal.png", "skip_on.png", "skip_normal.png", Point(1230.0f, 30.0f), true);
+	SkipBtn->setScale(0.8f);
+	this->addChild(SkipBtn, 10);
+
 	 //B2World
 	_b2World = nullptr;
 	b2Vec2 Gravity = b2Vec2(0.0f, -9.8f);	//重力方向
@@ -51,6 +66,7 @@ bool OneScene::init()
 	_b2World->SetAllowSleeping(AllowSleep);	//設定物件允許睡著
 
 	readSceneFile();
+	setupWinSensor();
 
 	// 先建立 ballSprite 的 Sprite 並加入場景中
 	PlayerSprite = (Sprite *)OneBackground->getChildByName("player");
@@ -76,12 +92,13 @@ bool OneScene::init()
 	rectShape.SetAsBox(bw*0.5f / PTM_RATIO, bh*0.5f / PTM_RATIO);
 	// 以 b2FixtureDef  結構宣告剛體結構變數，並設定剛體的相關物理係數
 	b2FixtureDef fixtureDef;
-	//fixtureDef.shape = &ballShape;// 指定剛體的外型為圓形
 	fixtureDef.shape = &rectShape;
 	fixtureDef.restitution = 0.5f;// 設定彈性係數
-	fixtureDef.density = 1.0f;// 設定密度
+	fixtureDef.density = 0.1f;// 設定密度
 	fixtureDef.friction = 0.15f;// 設定摩擦係數
 	rectBody->CreateFixture(&fixtureDef);// 在 Body 上產生這個剛體的設定
+
+	_contactListener.setCollisionTargetPlayer(*PlayerSprite);
 
 
 	if (BOX2D_DEBUG) {
@@ -124,7 +141,7 @@ void OneScene::doStep(float dt) {
 			ballData->setPosition(body->GetPosition().x*PTM_RATIO, body->GetPosition().y*PTM_RATIO);
 			ballData->setRotation(-1 * CC_RADIANS_TO_DEGREES(body->GetAngle()));
 			if (_fGameTime >= 3 && !_bPlayerGo) {
-				rectBody->ApplyLinearImpulse(b2Vec2(20, 0), rectBody->GetWorldCenter(), true);
+				rectBody->ApplyLinearImpulse(b2Vec2(1, 0), rectBody->GetWorldCenter(), true);
 				_bPlayerGo = true;
 			}
 		}
@@ -132,6 +149,7 @@ void OneScene::doStep(float dt) {
 		if (body->GetType() == b2BodyType::b2_dynamicBody && body != rectBody) {
 			float x = body->GetPosition().x * PTM_RATIO;
 			float y = body->GetPosition().y * PTM_RATIO;
+			Sprite* spriteData = (Sprite *)body->GetUserData();
 			if (x > visibleSize.width || x < 0 || y >  visibleSize.height || y < 0) {
 				if (body->GetUserData() != NULL) {
 					Sprite* spriteData = (Sprite *)body->GetUserData();
@@ -140,18 +158,41 @@ void OneScene::doStep(float dt) {
 				_b2World->DestroyBody(body);
 				body = NULL;
 			}
+			else if (!spriteData->isVisible()) {
+				this->removeChild(spriteData);
+				_b2World->DestroyBody(body);
+				body = NULL;
+			}
 			else body = body->GetNext(); //否則就繼續更新下一個Body
 		}
 		else body = body->GetNext(); //否則就繼續更新下一個Body
 	}
+	if (_contactListener.win) {
+		nextScene();
+	}
 }
 CContactListener::CContactListener()
 {
-	_bCollisionAir = false;
+}
+void CContactListener::setCollisionTargetPlayer(cocos2d::Sprite &targetSprite) {
+	_Playersprite = &targetSprite;
 }
 void CContactListener::setCollisionTarget(cocos2d::Sprite &targetSprite)
 {
-	_targetSprite = &targetSprite;
+	if (_HeadtargetSprite == NULL) {
+		_HeadtargetSprite = new AirDiet;
+		_HeadtargetSprite->_sprite = &targetSprite;
+		_HeadtargetSprite->_NexttargetSprite = NULL;
+		_NewtargetSprite = _HeadtargetSprite;
+	}
+	else {
+		struct AirDiet * Current = new AirDiet;
+		Current->_sprite = &targetSprite;
+		Current->_NexttargetSprite = NULL;
+		if (_NewtargetSprite == NULL)for (_NewtargetSprite = _HeadtargetSprite; _NewtargetSprite->_NexttargetSprite != NULL; _NewtargetSprite = _NewtargetSprite->_NexttargetSprite) {}
+		_NewtargetSprite->_NexttargetSprite = Current;
+		_NewtargetSprite = Current;
+	}
 }
 
 //
@@ -161,11 +202,17 @@ void CContactListener::BeginContact(b2Contact* contact)
 {
 	b2Body* BodyA = contact->GetFixtureA()->GetBody();
 	b2Body* BodyB = contact->GetFixtureB()->GetBody();
-	if (BodyA->GetUserData() == _targetSprite) {
-		_bCollisionAir = true;
+	for (_NewtargetSprite = _HeadtargetSprite; _NewtargetSprite != NULL; _NewtargetSprite = _NewtargetSprite->_NexttargetSprite) {
+		if (BodyA->GetUserData() == _NewtargetSprite->_sprite) {
+			_NewtargetSprite->_sprite->setVisible(false);
+		}
+		else if (BodyB->GetUserData() == _NewtargetSprite->_sprite) {
+			_NewtargetSprite->_sprite->setVisible(false);
+		}
 	}
-	else if (BodyB->GetUserData() == _targetSprite) {
-		_bCollisionAir = true;
+	if (BodyA->GetFixtureList()->GetDensity() == -10000.0f) {
+		if (BodyB->GetUserData() == _Playersprite)
+			win = true;
 	}
 }
 
@@ -174,6 +221,26 @@ void CContactListener::EndContact(b2Contact* contact)
 {
 	b2Body* BodyA = contact->GetFixtureA()->GetBody();
 	b2Body* BodyB = contact->GetFixtureB()->GetBody();
+}
+void OneScene::setupWinSensor() {
+	auto sensorSprite = (Sprite *)OneBackground->getChildByName("win_sensor");
+	Point loc = sensorSprite->getPosition();
+	Size  size = sensorSprite->getContentSize();
+	float scale = sensorSprite->getScale();
+	sensorSprite->setVisible(false);
+	b2BodyDef sensorBodyDef;
+	sensorBodyDef.position.Set(loc.x / PTM_RATIO, loc.y / PTM_RATIO);
+	sensorBodyDef.type = b2_staticBody;
+
+	b2Body* SensorBody = _b2World->CreateBody(&sensorBodyDef);
+	b2PolygonShape sensorShape;
+	sensorShape.SetAsBox(size.width *0.5f * scale / PTM_RATIO, size.height*0.5f*scale / PTM_RATIO);
+
+	b2FixtureDef SensorFixtureDef;
+	SensorFixtureDef.shape = &sensorShape;
+	SensorFixtureDef.isSensor = true;	// 設定為 Sensor
+	SensorFixtureDef.density = -10000; // 故意設定成這個值，方便碰觸時候的判斷
+	SensorBody->CreateFixture(&SensorFixtureDef);
 }
 void OneScene::readSceneFile() {
 	char tmp[20] = "";
@@ -186,25 +253,29 @@ void OneScene::readSceneFile() {
 	// 產生一次，就可以讓後面所有的 Shape 使用
 	b2Body *body = _b2World->CreateBody(&bodyDef);
 
-	// 產生靜態邊界所需要的 EdgeShape
-	b2EdgeShape edgeShape;
+	b2PolygonShape rectShape;
 	b2FixtureDef fixtureDef; // 產生 Fixture
-	fixtureDef.shape = &edgeShape;
+	fixtureDef.shape = &rectShape;
 
-	for (size_t i = 1; i <= 2; i++) {
+	for (size_t i = 1; i <= 2; i++)
+	{
 		// 產生所需要的 Sprite file name int plist 
 		// 此處取得的都是相對於 csbRoot 所在位置的相對座標
 		// 在計算 edgeShape 的相對應座標時，必須進行轉換
 		sprintf(tmp, "wall_%d", i);
-		auto edgeSprite = (Sprite *)OneBackground->getChildByName(tmp);
-		Size ts = edgeSprite->getContentSize();
-		Point loc = edgeSprite->getPosition();
-		float angle = edgeSprite->getRotation();
-		float scale = edgeSprite->getScaleX();	// 水平的線段圖示假設都只有對 X 軸放大
+		auto rectSprite = (Sprite *)OneBackground->getChildByName(tmp);
+		Size ts = rectSprite->getContentSize();
+		Point loc = rectSprite->getPosition();
+		float angle = rectSprite->getRotation();
+		float scaleX = rectSprite->getScaleX();	// 水平的線段圖示假設都只有對 X 軸放大
+		float scaleY = rectSprite->getScaleY();	// 水平的線段圖示假設都只有對 X 軸放大
 
-		Point lep1, lep2, wep1, wep2; // EdgeShape 的兩個端點
-		lep1.y = 0; lep1.x = -(ts.width - 4) / 2.0f;
-		lep2.y = 0; lep2.x = (ts.width - 4) / 2.0f;
+												// rectShape 的四個端點, 0 右上、 1 左上、 2 左下 3 右下
+		Point lep[4], wep[4];
+		lep[0].x = (ts.width - 4) / 2.0f;;  lep[0].y = (ts.height - 4) / 2.0f;
+		lep[1].x = -(ts.width - 4) / 2.0f;; lep[1].y = (ts.height - 4) / 2.0f;
+		lep[2].x = -(ts.width - 4) / 2.0f;; lep[2].y = -(ts.height - 4) / 2.0f;
+		lep[3].x = (ts.width - 4) / 2.0f;;  lep[3].y = -(ts.height - 4) / 2.0f;
 
 		// 所有的線段圖示都是是本身的中心點為 (0,0)，
 		// 根據縮放、旋轉產生所需要的矩陣
@@ -212,20 +283,24 @@ void OneScene::readSceneFile() {
 		// 然後進行旋轉，
 		// Step1: 先CHECK 有無旋轉，有旋轉則進行端點的計算
 		cocos2d::Mat4 modelMatrix, rotMatrix;
-		modelMatrix.m[0] = scale;  // 先設定 X 軸的縮放
+		modelMatrix.m[0] = scaleX;  // 先設定 X 軸的縮放
+		modelMatrix.m[5] = scaleY;  // 先設定 Y 軸的縮放
 		cocos2d::Mat4::createRotationZ(angle*M_PI / 180.0f, &rotMatrix);
 		modelMatrix.multiply(rotMatrix);
 		modelMatrix.m[3] = PntLoc.x + loc.x; //設定 Translation，自己的加上父親的
 		modelMatrix.m[7] = PntLoc.y + loc.y; //設定 Translation，自己的加上父親的
+		for (size_t j = 0; j < 4; j++)
+		{
+			wep[j].x = lep[j].x * modelMatrix.m[0] + lep[j].y * modelMatrix.m[1] + modelMatrix.m[3];
+			wep[j].y = lep[j].x * modelMatrix.m[4] + lep[j].y * modelMatrix.m[5] + modelMatrix.m[7];
+		}
+		b2Vec2 vecs[] = {
+			b2Vec2(wep[0].x / PTM_RATIO, wep[0].y / PTM_RATIO),
+			b2Vec2(wep[1].x / PTM_RATIO, wep[1].y / PTM_RATIO),
+			b2Vec2(wep[2].x / PTM_RATIO, wep[2].y / PTM_RATIO),
+			b2Vec2(wep[3].x / PTM_RATIO, wep[3].y / PTM_RATIO) };
 
-		// 產生兩個端點
-		wep1.x = lep1.x * modelMatrix.m[0] + lep1.y * modelMatrix.m[1] + modelMatrix.m[3];
-		wep1.y = lep1.x * modelMatrix.m[4] + lep1.y * modelMatrix.m[5] + modelMatrix.m[7];
-		wep2.x = lep2.x * modelMatrix.m[0] + lep2.y * modelMatrix.m[1] + modelMatrix.m[3];
-		wep2.y = lep2.x * modelMatrix.m[4] + lep2.y * modelMatrix.m[5] + modelMatrix.m[7];
-
-		// bottom edge
-		edgeShape.Set(b2Vec2(wep1.x / PTM_RATIO, wep1.y / PTM_RATIO), b2Vec2(wep2.x / PTM_RATIO, wep2.y / PTM_RATIO));
+		rectShape.Set(vecs, 4);
 		body->CreateFixture(&fixtureDef);
 	}
 }
@@ -240,144 +315,82 @@ void OneScene::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
 }
 bool OneScene::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 	Point touchLoc = pTouch->getLocation();
-	BeginLoc = touchLoc;
-	/*_ParticleControl._emitterPt = touchLoc;
-	_ParticleControl.setEmitter(true);*/
-	_bAirOpen = true;
+	if (AirBtn->touchesBegin(touchLoc)) {
+		MagnetBtn->closebtn();
+	}
+	if (_bAirOpen) {
+		HeadAir = new AirDraw;
+		HeadAir->pos = touchLoc;
+		HeadAir->NextAir = NULL;
+		NewAir = HeadAir;
+	}
+	if (SkipBtn->touchesBegin(touchLoc)) {
+		_bAirOpen = false;
+		AirBtn->closebtn();
+	}
+	if (MagnetBtn->touchesBegin(touchLoc)) {
+		_bAirOpen = false;
+		AirBtn->closebtn();
+	}
 	return true;
 }
 void OneScene::onTouchMoved(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 	Point touchLoc = pTouch->getLocation();
 	if (_bAirOpen) {
+		if (ccpDistance(NewAir->pos, touchLoc) >= 32) {
+			struct AirDraw * Current = new AirDraw;
+			Current->pos = touchLoc;
+			Current->NextAir = NULL;
+			NewAir->NextAir = Current;
+			NewAir = Current;
+		}
 	}
 }
 void OneScene::onTouchEnded(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 	Point touchLoc = pTouch->getLocation();
-	if (_bAirOpen) {
-		CreateAir(BeginLoc, touchLoc);
-		_bAirOpen = false;
+	if (AirBtn->touchesEnded(touchLoc)) {
+		_bAirOpen = !_bAirOpen;
+	}
+	else if (_bAirOpen) {
+		CreateAir();
+	}
+	if (SkipBtn->touchesEnded(touchLoc)) {
+		nextScene();
+	}
+	if (MagnetBtn->touchesEnded(touchLoc)) {
 	}
 }
-void OneScene::CreateAir(cocos2d::Point Bpos, cocos2d::Point Epos) {
-	float dx = Epos.x - Bpos.x;
-	float dy = Epos.y - Bpos.y;
-	/*AirSprite = Sprite::createWithSpriteFrameName("dount01.png");
-	AirSprite->setScale(0.5f);
-	this->addChild(AirSprite, 2);
-	b2BodyDef bodyDef;
-	bodyDef.type = b2_dynamicBody;
-	bodyDef.userData = AirSprite;
-	bodyDef.position.Set((Bpos.x) / PTM_RATIO, (Bpos.y) / PTM_RATIO);
-	b2Body *AirBody = _b2World->CreateBody(&bodyDef);
-	AirBody->SetGravityScale(0.0f);
-	b2CircleShape ballShape;
-	Size ballsize = AirSprite->getContentSize();
-	ballShape.m_radius = 0.5f * (ballsize.width - 4) *0.5f / PTM_RATIO;
-	b2FixtureDef fixtureDef;
-	fixtureDef.shape = &ballShape;
-	fixtureDef.restitution = 0.75f;
-	fixtureDef.density = 5.0f;
-	fixtureDef.friction = 0.15f;
-	AirBody->CreateFixture(&fixtureDef);*/
-	if (abs(dx) >= abs(dy)) {
-		if (dx >= 0) {
-			for (dx; dx >= 0; ) {
-				auto AirSprite = Sprite::createWithSpriteFrameName("dount01.png");
-				//auto AirSprite = Sprite::createWithSpriteFrameName("cloud.png");
-				AirSprite->setScale(0.5f);
-				this->addChild(AirSprite, 2);
-				b2BodyDef bodyDef;
-				bodyDef.type = b2_dynamicBody;
-				bodyDef.userData = AirSprite;
-				bodyDef.position.Set((Bpos.x + dx) / PTM_RATIO, (Bpos.y + dy) / PTM_RATIO);
-				b2Body *AirBody = _b2World->CreateBody(&bodyDef);
-				AirBody->SetGravityScale(-0.5f);
-				b2CircleShape ballShape;
-				Size ballsize = AirSprite->getContentSize();
-				ballShape.m_radius = 0.5f * (ballsize.width - 4) *0.5f / PTM_RATIO;
-				b2FixtureDef fixtureDef;
-				fixtureDef.shape = &ballShape;
-				fixtureDef.restitution = 0.75f;
-				fixtureDef.density = 5.0f;
-				fixtureDef.friction = 0.15f;
-				AirBody->CreateFixture(&fixtureDef);
-				dy = dy - 0.5f *(ballsize.width - 4)*(dy / dx);
-				dx = dx - 0.5f *(ballsize.width - 4);
-			}
-		}
-		else {
-			for (dx; dx < 0; ) {
-				auto AirSprite = Sprite::createWithSpriteFrameName("dount01.png");
-				AirSprite->setScale(0.5f);
-				this->addChild(AirSprite, 2);
-				b2BodyDef bodyDef;
-				bodyDef.type = b2_dynamicBody;
-				bodyDef.userData = AirSprite;
-				bodyDef.position.Set((Bpos.x + dx) / PTM_RATIO, (Bpos.y + dy) / PTM_RATIO);
-				b2Body *AirBody = _b2World->CreateBody(&bodyDef);
-				AirBody->SetGravityScale(-0.5f);
-				b2CircleShape ballShape;
-				Size ballsize = AirSprite->getContentSize();
-				ballShape.m_radius = 0.5f * (ballsize.width - 4) *0.5f / PTM_RATIO;
-				b2FixtureDef fixtureDef;
-				fixtureDef.shape = &ballShape;
-				fixtureDef.restitution = 0.75f;
-				fixtureDef.density = 5.0f;
-				fixtureDef.friction = 0.15f;
-				AirBody->CreateFixture(&fixtureDef);
-				dy = dy + 0.5f *(ballsize.width - 4)*(dy / dx);
-				dx = dx + 0.5f *(ballsize.width - 4);
-			}
-		}
+void OneScene::CreateAir() {
+	for (NewAir = HeadAir; NewAir != NULL;NewAir = NewAir->NextAir) {
+		auto AirSprite = Sprite::createWithSpriteFrameName("new_cloud.png");
+		AirSprite->setScale(1.0f);
+		this->addChild(AirSprite, 2);
+		b2BodyDef bodyDef;
+		bodyDef.type = b2_dynamicBody;
+		bodyDef.userData = AirSprite;
+		bodyDef.position.Set((NewAir->pos).x / PTM_RATIO, (NewAir->pos).y / PTM_RATIO);
+		b2Body *AirBody = _b2World->CreateBody(&bodyDef);
+		AirBody->SetGravityScale(-1.0f);
+		b2CircleShape ballShape;
+		Size ballsize = AirSprite->getContentSize();
+		ballShape.m_radius = 0.5f * (ballsize.width - 4) *0.5f / PTM_RATIO;
+		b2FixtureDef fixtureDef;
+		fixtureDef.shape = &ballShape;
+		fixtureDef.restitution = 0.75f;
+		fixtureDef.density = 0.3f;
+		fixtureDef.friction = 0.15f;
+		AirBody->CreateFixture(&fixtureDef);
+		_b2World->SetContactListener(&_contactListener);
+		_contactListener.setCollisionTarget(*AirSprite);
 	}
-	else {
-		if (dy >= 0) {
-			for (dy; dy >= 0; ) {
-				auto AirSprite = Sprite::createWithSpriteFrameName("dount01.png");
-				AirSprite->setScale(0.5f);
-				this->addChild(AirSprite, 2);
-				b2BodyDef bodyDef;
-				bodyDef.type = b2_dynamicBody;
-				bodyDef.userData = AirSprite;
-				bodyDef.position.Set((Bpos.x + dx) / PTM_RATIO, (Bpos.y + dy) / PTM_RATIO);
-				b2Body *AirBody = _b2World->CreateBody(&bodyDef);
-				AirBody->SetGravityScale(-0.5f);
-				b2CircleShape ballShape;
-				Size ballsize = AirSprite->getContentSize();
-				ballShape.m_radius = 0.5f * (ballsize.width - 4) *0.5f / PTM_RATIO;
-				b2FixtureDef fixtureDef;
-				fixtureDef.shape = &ballShape;
-				fixtureDef.restitution = 0.75f;
-				fixtureDef.density = 5.0f;
-				fixtureDef.friction = 0.15f;
-				AirBody->CreateFixture(&fixtureDef);
-				dx = dx - 0.5f *(ballsize.width - 4)*(dx / dy);
-				dy = dy - 0.5f *(ballsize.width - 4);
-			}
-		}
-		else {
-			for (dy; dy < 0; ) {
-				auto AirSprite = Sprite::createWithSpriteFrameName("dount01.png");
-				AirSprite->setScale(0.5f);
-				this->addChild(AirSprite, 2);
-				b2BodyDef bodyDef;
-				bodyDef.type = b2_dynamicBody;
-				bodyDef.userData = AirSprite;
-				bodyDef.position.Set((Bpos.x + dx) / PTM_RATIO, (Bpos.y + dy) / PTM_RATIO);
-				b2Body *AirBody = _b2World->CreateBody(&bodyDef);
-				AirBody->SetGravityScale(-0.5f);
-				b2CircleShape ballShape;
-				Size ballsize = AirSprite->getContentSize();
-				ballShape.m_radius = 0.5f * (ballsize.width - 4) *0.5f / PTM_RATIO;
-				b2FixtureDef fixtureDef;
-				fixtureDef.shape = &ballShape;
-				fixtureDef.restitution = 0.75f;
-				fixtureDef.density = 5.0f;
-				fixtureDef.friction = 0.15f;
-				AirBody->CreateFixture(&fixtureDef);
-				dx = dx + 0.5f *(ballsize.width - 4)*(dx / dy);
-				dy = dy + 0.5f *(ballsize.width - 4);
-			}
-		}
-	}
+}
+void OneScene::nextScene() {
+	// 先將這個 SCENE 的 Update(這裡使用 OnFrameMove, 從 schedule update 中移出)
+	this->unschedule(schedule_selector(OneScene::doStep));
+	//SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("mainscene.plist");
+	// 上面這行何時需要放在這裡稍後會說明
+	// 設定場景切換的特效
+	TransitionFade *pageTurn = TransitionFade::create(1.0f, TwoScene::createScene());
+	Director::getInstance()->replaceScene(pageTurn);
+	//SimpleAudioEngine::getInstance()->stopBackgroundMusic();
 }

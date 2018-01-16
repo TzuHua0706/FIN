@@ -8,37 +8,51 @@
 #include "Common/CButton.h"
 #include "Common/GLES-Render.h"
 
+struct AirDraw
+{
+	cocos2d::Point pos;
+	struct AirDraw * NextAir;
+};
+struct AirDiet {
+	cocos2d::Sprite * _sprite;
+	struct AirDiet * _NexttargetSprite;
+};
 class CContactListener : public b2ContactListener
 {
 public:
-	cocos2d::Sprite *_targetSprite;
-	bool _bCollisionAir;
+	struct AirDiet * _HeadtargetSprite;
+	struct AirDiet * _NewtargetSprite;
+	cocos2d::Sprite * _Playersprite;
 	CContactListener();
+	bool win = false;
 	//碰撞開始
 	virtual void BeginContact(b2Contact* contact);
 	//碰撞結束
 	virtual void EndContact(b2Contact* contact);
 	void setCollisionTarget(cocos2d::Sprite &targetSprite);
+	void setCollisionTargetPlayer(cocos2d::Sprite &targetSprite);
 };
 
 class OneScene : public cocos2d::Layer
 {
 private:
+	CButton * SkipBtn;
+	CButton * AirBtn;
+	CButton * MagnetBtn;
 	b2World* _b2World;
 	b2Body *rectBody;
-	//b2Body *AirBody;
 	cocos2d::Size visibleSize;
 	cocos2d::Vec2 origin;
 	cocos2d::Node * OneBackground;
 	cocos2d::Point PntLoc;
 	cocos2d::Sprite * PlayerSprite;
-	cocos2d::Sprite * AirSprite;
-	cocos2d::Point BeginLoc;
 	float _fGameTime = 0;
 	bool _bAirOpen = false;
 	bool _bPlayerGo = false;
 
 	CContactListener _contactListener;
+	struct AirDraw * HeadAir;
+	struct AirDraw * NewAir;
 
 	GLESDebugDraw* _DebugDraw;
 	virtual void draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags);
@@ -52,8 +66,10 @@ public:
 	virtual bool init();
 	void doStep(float dt);
 
+	void nextScene();
 	void readSceneFile();
-	void CreateAir(cocos2d::Point Bpos, cocos2d::Point Epos);
+	void setupWinSensor();
+	void CreateAir();
 
 	cocos2d::EventListenerTouchOneByOne *_listener1;
 	bool onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent); //觸碰開始事件

@@ -66,9 +66,50 @@
           <PlistImageFile Name="wall04.png" Key="wall04.png" />
           <PlistImageFile Name="wheel.png" Key="wheel.png" />
         </PlistImageFolder>
-        <Project Name="Two.csd" Type="Node" />
-        <Project Name="StartScene.csd" Type="Scene" />
+        <PlistImageFolder Image="new_img.png" PListFile="new_img.plist" Name=".new_img_PList.Dir">
+          <PlistImageFile Name="new people_1.png" Key="new people_1.png" />
+          <PlistImageFile Name="new people_2.png" Key="new people_2.png" />
+          <PlistImageFile Name="new_ballon.png" Key="new_ballon.png" />
+          <PlistImageFile Name="new_ballon_1.png" Key="new_ballon_1.png" />
+          <PlistImageFile Name="new_ballon_2.png" Key="new_ballon_2.png" />
+          <PlistImageFile Name="new_ballon_3.png" Key="new_ballon_3.png" />
+          <PlistImageFile Name="new_bird.png" Key="new_bird.png" />
+          <PlistImageFile Name="new_circle_light.png" Key="new_circle_light.png" />
+          <PlistImageFile Name="new_cloud.png" Key="new_cloud.png" />
+          <PlistImageFile Name="new_cloud_normal.png" Key="new_cloud_normal.png" />
+          <PlistImageFile Name="new_cloud_on.png" Key="new_cloud_on.png" />
+          <PlistImageFile Name="new_fish.png" Key="new_fish.png" />
+          <PlistImageFile Name="new_glass.png" Key="new_glass.png" />
+          <PlistImageFile Name="new_glass_2.png" Key="new_glass_2.png" />
+          <PlistImageFile Name="new_light.png" Key="new_light.png" />
+          <PlistImageFile Name="new_light_2.png" Key="new_light_2.png" />
+          <PlistImageFile Name="new_magnet.png" Key="new_magnet.png" />
+          <PlistImageFile Name="new_magnet_normal.png" Key="new_magnet_normal.png" />
+          <PlistImageFile Name="new_magnet_on.png" Key="new_magnet_on.png" />
+          <PlistImageFile Name="new_metal.png" Key="new_metal.png" />
+          <PlistImageFile Name="new_rope.png" Key="new_rope.png" />
+          <PlistImageFile Name="new_start_btn.png" Key="new_start_btn.png" />
+          <PlistImageFile Name="skip_normal.png" Key="skip_normal.png" />
+          <PlistImageFile Name="skip_on.png" Key="skip_on.png" />
+          <PlistImageFile Name="new_fishing.png" Key="new_fishing.png" />
+          <PlistImageFile Name="new_fishing_btn.png" Key="new_fishing_btn.png" />
+          <PlistImageFile Name="new_ghost.png" Key="new_ghost.png" />
+          <PlistImageFile Name="new_light_btn.png" Key="new_light_btn.png" />
+          <PlistImageFile Name="new_win.png" Key="new_win.png" />
+          <PlistImageFile Name="new_wood.png" Key="new_wood.png" />
+          <PlistImageFile Name="new_wood_btn.png" Key="new_wood_btn.png" />
+        </PlistImageFolder>
+        <Fnt Name="couriernew32.fnt" />
+        <Project Name="Four.csd" Type="Node" />
+        <Image Name="new_bg_1.jpg" />
+        <Image Name="new_bg_2.jpg" />
+        <Image Name="new_bg_3.jpg" />
+        <Image Name="new_bg_4.jpg" />
+        <Image Name="new_sea.png" />
         <Project Name="One.csd" Type="Node" />
+        <Project Name="StartScene.csd" Type="Scene" />
+        <Project Name="Three.csd" Type="Node" />
+        <Project Name="Two.csd" Type="Node" />
       </RootFolder>
     </Group>
   </SolutionFolder>

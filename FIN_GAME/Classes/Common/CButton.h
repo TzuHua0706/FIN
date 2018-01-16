@@ -10,6 +10,7 @@ class CButton :public Node
 private:
 	cocos2d::Sprite *_normalPic;
 	cocos2d::Sprite *_touchedPic;
+	cocos2d::Sprite *_openPic;
 	cocos2d::Sprite *_disablePic;
 
 	cocos2d::Size  _BtnSize;
@@ -19,6 +20,7 @@ private:
 	float _fScale;	// 圖片縮放的大小
 	bool _bTouched; // 是否被按下
 	bool _bEnabled; // 是否有作用
+	bool _bOpen; //狀態
 
 public:
 	CButton();
@@ -26,7 +28,8 @@ public:
 	void setButtonInfo(const char *normalImg, const char *touchedImg, const char *disableImg, const cocos2d::Point locPt, bool enabled);
 	bool touchesBegin(cocos2d::Point inPos);
 	bool touchesMoved(cocos2d::Point inPos); 
-	bool touchesEnded(cocos2d::Point inPos); 
+	bool touchesEnded(cocos2d::Point inPos);
+	void closebtn();
 	void setEnabled(bool bEnable);
 	void setScale(float scale);
 };

@@ -44,10 +44,10 @@ bool StartScene::init()
 	auto rootNode = CSLoader::createNode("StartScene.csb");
 	addChild(rootNode);
 
-	OnePage = CButton::create();
-	OnePage->setButtonInfo("dnarrow.png", "dnarrowon.png", "dnarrow.png", Point(visibleSize.width / 2.0f, 50.0f), true);
-	OnePage->setScale(0.75f);
-	this->addChild(OnePage, 10);
+	StartBtn = CButton::create();
+	StartBtn->setButtonInfo("dnarrow.png", "dnarrowon.png", "dnarrow.png", Point(visibleSize.width / 2.0f, 50.0f), true);
+	StartBtn->setScale(0.75f);
+	this->addChild(StartBtn, 10);
 
 	_listener1 = EventListenerTouchOneByOne::create();	//創建一個一對一的事件聆聽器
 	_listener1->onTouchBegan = CC_CALLBACK_2(StartScene::onTouchBegan, this);		//加入觸碰開始事件
@@ -63,7 +63,7 @@ void StartScene::doStep(float dt) {
 }
 bool StartScene::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent){
 	Point touchLoc = pTouch->getLocation();
-	if (OnePage->touchesBegin(touchLoc)) {
+	if (StartBtn->touchesBegin(touchLoc)) {
 		auto scene = OneScene::createScene();
 		//auto scene = TwoScene::createScene();
 		//auto scene = ThreeScene::createScene();
@@ -74,11 +74,11 @@ bool StartScene::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent){
 }
 void StartScene::onTouchMoved(cocos2d::Touch *pTouch, cocos2d::Event *pEvent){
 	Point touchLoc = pTouch->getLocation();
-	if (OnePage->touchesMoved(touchLoc)) {
+	if (StartBtn->touchesMoved(touchLoc)) {
 	}
 }
 void StartScene::onTouchEnded(cocos2d::Touch *pTouch, cocos2d::Event *pEvent){
 	Point touchLoc = pTouch->getLocation();
-	if (OnePage->touchesEnded(touchLoc)) {
+	if (StartBtn->touchesEnded(touchLoc)) {
 	}
 }

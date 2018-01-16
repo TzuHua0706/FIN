@@ -1,6 +1,7 @@
 #include "TwoScene.h"
 #include "cocostudio/CocoStudio.h"
 #include "ui/CocosGUI.h"
+#include "ThreeScene.h"
 
 #define PTM_RATIO 32.0f
 
@@ -43,6 +44,20 @@ bool TwoScene::init()
 	addChild(TwoBackground);
 	PntLoc = TwoBackground->getPosition();
 
+	//Button
+	AirBtn = CButton::create();
+	AirBtn->setButtonInfo("new_cloud_normal.png", "new_cloud_on.png", "new_cloud.png", Point(1180.0f, 685.0f), true);
+	AirBtn->setScale(1.0f);
+	this->addChild(AirBtn, 10);
+	MagnetBtn = CButton::create();
+	MagnetBtn->setButtonInfo("new_magnet_normal.png", "new_magnet_on.png", "new_magnet_normal.png", Point(1250.0f, 685.0f), true);
+	MagnetBtn->setScale(1.0f);
+	this->addChild(MagnetBtn, 10);
+	SkipBtn = CButton::create();
+	SkipBtn->setButtonInfo("skip_normal.png", "skip_on.png", "skip_normal.png", Point(1230.0f, 30.0f), true);
+	SkipBtn->setScale(0.8f);
+	this->addChild(SkipBtn, 10);
+
 	//B2World
 	_b2World = nullptr;
 	b2Vec2 Gravity = b2Vec2(0.0f, -9.8f);	//重力方向
@@ -51,6 +66,9 @@ bool TwoScene::init()
 	_b2World->SetAllowSleeping(AllowSleep);	//設定物件允許睡著
 
 	readSceneFile();
+	setupRopeJoint();
+	setupPulleyJoint();
+	setupWinSensor();
 
 	// 先建立 ballSprite 的 Sprite 並加入場景中
 	PlayerSprite = (Sprite *)TwoBackground->getChildByName("player");
@@ -63,25 +81,30 @@ bool TwoScene::init()
 	bodyDef.userData = PlayerSprite;// 設定 Sprite 為動態物體的顯示圖示
 	bodyDef.position.Set(player_loc.x / PTM_RATIO, player_loc.y / PTM_RATIO);
 	// 以 bodyDef 在 b2World 中建立實體並傳回該實體的指標
-	rectBody = _b2World->CreateBody(&bodyDef);
+	playerBody = _b2World->CreateBody(&bodyDef);
 	// 設定該物體的外型
 	// 根據 Sprite 圖形的大小來設定圓形的半徑
 	b2PolygonShape rectShape;
+	//b2CircleShape ballShape;
 	Size ts = PlayerSprite->getContentSize();
+	//float scale = PlayerSprite->getScale();
 	float scaleX = PlayerSprite->getScaleX();	// 讀取矩形畫框有對 X 軸縮放
 	float scaleY = PlayerSprite->getScaleY();	// 讀取矩形畫框有對 Y 軸縮放
 	float bw = (ts.width - 4)* scaleX;
 	float bh = (ts.height - 4)* scaleY;
 	// 設定剛體的範圍是一個 BOX （可以縮放成矩形）
 	rectShape.SetAsBox(bw*0.5f / PTM_RATIO, bh*0.5f / PTM_RATIO);
+	//ballShape.m_radius = 0.5f * (ts.width - 4) *0.5f*scale / PTM_RATIO;
 	// 以 b2FixtureDef  結構宣告剛體結構變數，並設定剛體的相關物理係數
 	b2FixtureDef fixtureDef;
 	//fixtureDef.shape = &ballShape;// 指定剛體的外型為圓形
 	fixtureDef.shape = &rectShape;
 	fixtureDef.restitution = 0.5f;// 設定彈性係數
-	fixtureDef.density = 1.0f;// 設定密度
-	fixtureDef.friction = 0.15f;// 設定摩擦係數
-	rectBody->CreateFixture(&fixtureDef);// 在 Body 上產生這個剛體的設定
+	fixtureDef.density = 0.1f;// 設定密度
+	fixtureDef.friction = 0.01f;// 設定摩擦係數
+	playerBody->CreateFixture(&fixtureDef);// 在 Body 上產生這個剛體的設定
+
+	_contactListener.setCollisionTargetPlayer(*PlayerSprite);
 
 
 	if (BOX2D_DEBUG) {
@@ -113,9 +136,17 @@ bool TwoScene::init()
 }
 void TwoScene::doStep(float dt) {
 	_fGameTime += dt;
+	_fWaterTime += dt;
+	if (_fWaterTime >= 0.15) { CreateWater(); _fWaterTime = 0; }
+	if (NewMagnetBody != NULL)
+	{
+		if (MagnetBody->GetPosition().y < NewMagnetBody->GetPosition().y)
+			MagnetBody->SetTransform(b2Vec2(MagnetBody->GetPosition().x, (MagnetBody->GetPosition().y) + dt * 30), MagnetBody->GetAngle());
+		else
+			MagnetBody->SetTransform(b2Vec2(MagnetBody->GetPosition().x, (MagnetBody->GetPosition().y) - dt * 30), MagnetBody->GetAngle());
+	}
 	int velocityIterations = 8; // 速度迭代次數
-								// 位置迭代次數，迭代次數一般設定為8~10 越高越真實但效率越差
-	int positionIterations = 1;
+	int positionIterations = 1; // 位置迭代次數，迭代次數一般設定為8~10 越高越真實但效率越差
 	_b2World->Step(dt, velocityIterations, positionIterations);
 	for (b2Body* body = _b2World->GetBodyList(); body; )
 	{
@@ -124,20 +155,26 @@ void TwoScene::doStep(float dt) {
 			ballData->setPosition(body->GetPosition().x*PTM_RATIO, body->GetPosition().y*PTM_RATIO);
 			ballData->setRotation(-1 * CC_RADIANS_TO_DEGREES(body->GetAngle()));
 			if (_fGameTime >= 3 && !_bPlayerGo) {
-				rectBody->ApplyLinearImpulse(b2Vec2(20, 0), rectBody->GetWorldCenter(), true);
+				playerBody->ApplyLinearImpulse(b2Vec2(1, 0), playerBody->GetWorldCenter(), true);
 				_bPlayerGo = true;
 			}
 		}
 		// 跑出螢幕外面就讓物體從 b2World 中移除
-		if (body->GetType() == b2BodyType::b2_dynamicBody && body != rectBody) {
+		if (body->GetType() == b2BodyType::b2_dynamicBody && body != playerBody) {
 			float x = body->GetPosition().x * PTM_RATIO;
 			float y = body->GetPosition().y * PTM_RATIO;
-
+			Sprite* spriteData = (Sprite *)body->GetUserData();
 			if (x > visibleSize.width || x < 0 || y >  visibleSize.height || y < 0) {
 				if (body->GetUserData() != NULL) {
 					Sprite* spriteData = (Sprite *)body->GetUserData();
+					spriteData->setVisible(false);
 					this->removeChild(spriteData);
 				}
+				_b2World->DestroyBody(body);
+				body = NULL;
+			}
+			else if (!spriteData->isVisible()) {
+				this->removeChild(spriteData);
 				_b2World->DestroyBody(body);
 				body = NULL;
 			}
@@ -145,6 +182,84 @@ void TwoScene::doStep(float dt) {
 		}
 		else body = body->GetNext(); //否則就繼續更新下一個Body
 	}
+	if (_contactListener.win) {
+		nextScene();
+	}
+}
+CContactListener_Two::CContactListener_Two()
+{
+}
+void CContactListener_Two::setCollisionTarget(cocos2d::Sprite &targetSprite)
+{
+	if (_HeadtargetSprite == NULL) {
+		_HeadtargetSprite = new AirDiet_Two;
+		_HeadtargetSprite->_bAir = true;
+		_HeadtargetSprite->_sprite = &targetSprite;
+		_HeadtargetSprite->_NexttargetSprite = NULL;
+		_NewtargetSprite = _HeadtargetSprite;
+	}
+	else {
+		struct AirDiet_Two * Current = new AirDiet_Two;
+		Current->_bAir = true;
+		Current->_sprite = &targetSprite;
+		Current->_NexttargetSprite = NULL;
+		if (_NewtargetSprite == NULL)for (_NewtargetSprite = _HeadtargetSprite; _NewtargetSprite->_NexttargetSprite != NULL; _NewtargetSprite = _NewtargetSprite->_NexttargetSprite) {}
+		_NewtargetSprite->_NexttargetSprite = Current;
+		_NewtargetSprite = Current;
+	}
+}
+void CContactListener_Two::setCollisionTargetPlayer(cocos2d::Sprite &targetSprite) {
+	_Playersprite = &targetSprite;
+}
+
+//
+// 只要是兩個 body 的 fixtures 碰撞，就會呼叫這個函式
+//
+void CContactListener_Two::BeginContact(b2Contact* contact)
+{
+	b2Body* BodyA = contact->GetFixtureA()->GetBody();
+	b2Body* BodyB = contact->GetFixtureB()->GetBody();
+	for (_NewtargetSprite = _HeadtargetSprite; _NewtargetSprite!= NULL; _NewtargetSprite = _NewtargetSprite->_NexttargetSprite) {
+		if (BodyA->GetUserData() == _NewtargetSprite->_sprite && _NewtargetSprite->_bAir) {
+			_NewtargetSprite->_sprite->setVisible(false);
+			_NewtargetSprite->_bAir = false;
+		}
+		else if (BodyB->GetUserData() == _NewtargetSprite->_sprite && _NewtargetSprite->_bAir) {
+			_NewtargetSprite->_sprite->setVisible(false);
+			_NewtargetSprite->_bAir = false;
+		}
+	}
+	if (BodyA->GetFixtureList()->GetDensity() == -10000.0f) {
+		if (BodyB->GetUserData() == _Playersprite)
+			win = true;
+	}
+}
+
+//碰撞結束
+void CContactListener_Two::EndContact(b2Contact* contact)
+{
+	b2Body* BodyA = contact->GetFixtureA()->GetBody();
+	b2Body* BodyB = contact->GetFixtureB()->GetBody();
+}
+void TwoScene::setupWinSensor() {
+	auto sensorSprite = (Sprite *)TwoBackground->getChildByName("win_sensor");
+	Point loc = sensorSprite->getPosition();
+	Size  size = sensorSprite->getContentSize();
+	float scale = sensorSprite->getScale();
+	sensorSprite->setVisible(false);
+	b2BodyDef sensorBodyDef;
+	sensorBodyDef.position.Set(loc.x / PTM_RATIO, loc.y / PTM_RATIO);
+	sensorBodyDef.type = b2_staticBody;
+
+	b2Body* SensorBody = _b2World->CreateBody(&sensorBodyDef);
+	b2PolygonShape sensorShape;
+	sensorShape.SetAsBox(size.width *0.5f * scale / PTM_RATIO, size.height*0.5f*scale / PTM_RATIO);
+
+	b2FixtureDef SensorFixtureDef;
+	SensorFixtureDef.shape = &sensorShape;
+	SensorFixtureDef.isSensor = true;	// 設定為 Sensor
+	SensorFixtureDef.density = -10000; // 故意設定成這個值，方便碰觸時候的判斷
+	SensorBody->CreateFixture(&SensorFixtureDef);
 }
 void TwoScene::readSceneFile() {
 	char tmp[20] = "";
@@ -157,25 +272,29 @@ void TwoScene::readSceneFile() {
 	// 產生一次，就可以讓後面所有的 Shape 使用
 	b2Body *body = _b2World->CreateBody(&bodyDef);
 
-	// 產生靜態邊界所需要的 EdgeShape
-	b2EdgeShape edgeShape;
+	b2PolygonShape rectShape;
 	b2FixtureDef fixtureDef; // 產生 Fixture
-	fixtureDef.shape = &edgeShape;
+	fixtureDef.shape = &rectShape;
 
-	for (size_t i = 1; i <= 8; i++) {
+	for (size_t i = 1; i <= 7; i++)
+	{
 		// 產生所需要的 Sprite file name int plist 
 		// 此處取得的都是相對於 csbRoot 所在位置的相對座標
 		// 在計算 edgeShape 的相對應座標時，必須進行轉換
 		sprintf(tmp, "wall_%d", i);
-		auto edgeSprite = (Sprite *)TwoBackground->getChildByName(tmp);
-		Size ts = edgeSprite->getContentSize();
-		Point loc = edgeSprite->getPosition();
-		float angle = edgeSprite->getRotation();
-		float scale = edgeSprite->getScaleX();	// 水平的線段圖示假設都只有對 X 軸放大
+		auto rectSprite = (Sprite *)TwoBackground->getChildByName(tmp);
+		Size ts = rectSprite->getContentSize();
+		Point loc = rectSprite->getPosition();
+		float angle = rectSprite->getRotation();
+		float scaleX = rectSprite->getScaleX();	// 水平的線段圖示假設都只有對 X 軸放大
+		float scaleY = rectSprite->getScaleY();	// 水平的線段圖示假設都只有對 X 軸放大
 
-		Point lep1, lep2, wep1, wep2; // EdgeShape 的兩個端點
-		lep1.y = 0; lep1.x = -(ts.width - 4) / 2.0f;
-		lep2.y = 0; lep2.x = (ts.width - 4) / 2.0f;
+												// rectShape 的四個端點, 0 右上、 1 左上、 2 左下 3 右下
+		Point lep[4], wep[4];
+		lep[0].x = (ts.width - 4) / 2.0f;;  lep[0].y = (ts.height - 4) / 2.0f;
+		lep[1].x = -(ts.width - 4) / 2.0f;; lep[1].y = (ts.height - 4) / 2.0f;
+		lep[2].x = -(ts.width - 4) / 2.0f;; lep[2].y = -(ts.height - 4) / 2.0f;
+		lep[3].x = (ts.width - 4) / 2.0f;;  lep[3].y = -(ts.height - 4) / 2.0f;
 
 		// 所有的線段圖示都是是本身的中心點為 (0,0)，
 		// 根據縮放、旋轉產生所需要的矩陣
@@ -183,22 +302,190 @@ void TwoScene::readSceneFile() {
 		// 然後進行旋轉，
 		// Step1: 先CHECK 有無旋轉，有旋轉則進行端點的計算
 		cocos2d::Mat4 modelMatrix, rotMatrix;
-		modelMatrix.m[0] = scale;  // 先設定 X 軸的縮放
+		modelMatrix.m[0] = scaleX;  // 先設定 X 軸的縮放
+		modelMatrix.m[5] = scaleY;  // 先設定 Y 軸的縮放
 		cocos2d::Mat4::createRotationZ(angle*M_PI / 180.0f, &rotMatrix);
 		modelMatrix.multiply(rotMatrix);
 		modelMatrix.m[3] = PntLoc.x + loc.x; //設定 Translation，自己的加上父親的
 		modelMatrix.m[7] = PntLoc.y + loc.y; //設定 Translation，自己的加上父親的
+		for (size_t j = 0; j < 4; j++)
+		{
+			wep[j].x = lep[j].x * modelMatrix.m[0] + lep[j].y * modelMatrix.m[1] + modelMatrix.m[3];
+			wep[j].y = lep[j].x * modelMatrix.m[4] + lep[j].y * modelMatrix.m[5] + modelMatrix.m[7];
+		}
+		b2Vec2 vecs[] = {
+			b2Vec2(wep[0].x / PTM_RATIO, wep[0].y / PTM_RATIO),
+			b2Vec2(wep[1].x / PTM_RATIO, wep[1].y / PTM_RATIO),
+			b2Vec2(wep[2].x / PTM_RATIO, wep[2].y / PTM_RATIO),
+			b2Vec2(wep[3].x / PTM_RATIO, wep[3].y / PTM_RATIO) };
 
-											 // 產生兩個端點
-		wep1.x = lep1.x * modelMatrix.m[0] + lep1.y * modelMatrix.m[1] + modelMatrix.m[3];
-		wep1.y = lep1.x * modelMatrix.m[4] + lep1.y * modelMatrix.m[5] + modelMatrix.m[7];
-		wep2.x = lep2.x * modelMatrix.m[0] + lep2.y * modelMatrix.m[1] + modelMatrix.m[3];
-		wep2.y = lep2.x * modelMatrix.m[4] + lep2.y * modelMatrix.m[5] + modelMatrix.m[7];
-
-		// bottom edge
-		edgeShape.Set(b2Vec2(wep1.x / PTM_RATIO, wep1.y / PTM_RATIO), b2Vec2(wep2.x / PTM_RATIO, wep2.y / PTM_RATIO));
+		rectShape.Set(vecs, 4);
 		body->CreateFixture(&fixtureDef);
 	}
+}
+void TwoScene::setupRopeJoint() {
+	b2BodyDef bodyDef;
+	bodyDef.type = b2_staticBody;
+	bodyDef.userData = NULL;
+	b2PolygonShape boxShape;
+	b2FixtureDef fixtureDef;
+
+	//Head
+	auto ropeHeadSprite = (Sprite *)TwoBackground->getChildByName("rope_head");
+	Size sizeHead = ropeHeadSprite->getContentSize();
+	Point locHead = ropeHeadSprite->getPosition();
+	float scaleHeadX = ropeHeadSprite->getScaleX();
+	float scaleHeadY = ropeHeadSprite->getScaleY();
+	bodyDef.position.Set(locHead.x / PTM_RATIO, locHead.y / PTM_RATIO);
+	bodyDef.userData = ropeHeadSprite;
+	b2Body *ropeHeadBody = _b2World->CreateBody(&bodyDef);
+	boxShape.SetAsBox((sizeHead.width-4)*scaleHeadX*0.5f / PTM_RATIO, (sizeHead.height-4)*scaleHeadY*0.5f / PTM_RATIO);
+	fixtureDef.shape = &boxShape;
+	ropeHeadBody->CreateFixture(&fixtureDef);
+
+	//End
+	auto ropeEndSprite = (Sprite *)TwoBackground->getChildByName("rope_end");
+	Size sizeEnd = ropeEndSprite->getContentSize();
+	Point locEnd = ropeEndSprite->getPosition();
+	float scaleEndX = ropeEndSprite->getScaleX();
+	float scaleEndY = ropeEndSprite->getScaleY();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position.Set(locEnd.x / PTM_RATIO, locEnd.y / PTM_RATIO);
+	bodyDef.userData = ropeEndSprite;
+	b2Body *ropeEndBody = _b2World->CreateBody(&bodyDef);
+	ropeEndBody->SetGravityScale(0);
+	boxShape.SetAsBox((sizeEnd.width-4)*scaleEndX*0.5f / PTM_RATIO, (sizeEnd.height-4)*scaleEndY*0.5f / PTM_RATIO);
+	fixtureDef.shape = &boxShape;
+	fixtureDef.density = 1.0f;// 設定密度
+	ropeEndBody->CreateFixture(&fixtureDef);
+
+	//磁鐵
+	auto MagnetSprite = (Sprite *)TwoBackground->getChildByName("ployblock_1");
+	Size sizeMagnet = MagnetSprite->getContentSize();
+	Point locMagnet = MagnetSprite->getPosition();
+	float scaleMagnetX = MagnetSprite->getScaleX();
+	float scaleMagnetY = MagnetSprite->getScaleY();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position.Set(locMagnet.x / PTM_RATIO, locMagnet.y / PTM_RATIO);
+	bodyDef.userData = MagnetSprite;
+	MagnetBody = _b2World->CreateBody(&bodyDef);
+	MagnetBody->SetGravityScale(0);
+	boxShape.SetAsBox((sizeMagnet.width-4)*scaleMagnetX*0.5f / PTM_RATIO, (sizeMagnet.height-4)*scaleMagnetY*0.5f / PTM_RATIO);
+	fixtureDef.density = 2.0f;// 設定密度
+	fixtureDef.shape = &boxShape;
+	MagnetBody->CreateFixture(&fixtureDef);
+
+	b2DistanceJointDef MagnetJointDef;
+	MagnetJointDef.Initialize(ropeEndBody, MagnetBody, b2Vec2(ropeEndBody->GetPosition().x- sizeEnd.width*scaleEndX*0.5f / PTM_RATIO, ropeEndBody->GetPosition().y), b2Vec2(MagnetBody->GetPosition().x /*+ sizeMagnet.width*scaleMagnetX*0.5f / PTM_RATIO*/, MagnetBody->GetPosition().y));
+	_b2World->CreateJoint(&MagnetJointDef);
+
+	//產生繩子關節
+	b2RopeJointDef JointDef;
+	JointDef.bodyA = ropeHeadBody;
+	JointDef.bodyB = ropeEndBody;
+	JointDef.localAnchorA = b2Vec2(-sizeHead.width*scaleHeadX*0.5f / PTM_RATIO, 0);
+	JointDef.localAnchorB = b2Vec2(sizeEnd.width*scaleEndX*0.5f / PTM_RATIO, 0);
+	JointDef.maxLength = (locHead.y - locEnd.y) / PTM_RATIO;
+	JointDef.collideConnected = true;
+	b2RopeJoint* J = (b2RopeJoint*)_b2World->CreateJoint(&JointDef);
+	
+	// 中間再以線段相連，
+	char tmp[20] = "";
+	Sprite *ropeSprite[10];
+	Point loc[10];
+	Size  size[10];
+	b2Body* ropeBody[10];
+
+	bodyDef.type = b2_dynamicBody;
+	// 因為是繩子所以重量不要太重
+	fixtureDef.density = 1.0f;  fixtureDef.friction = 1.0f; fixtureDef.restitution = 0.0f;
+	fixtureDef.shape = &boxShape;
+	// 產生一系列的繩子段落 rope01_01 ~ rope01_15，同時接起來
+	for (int i = 0; i < 10; i++)
+	{
+		sprintf(tmp, "rope_%d", i + 1);
+		ropeSprite[i] = (Sprite *)TwoBackground->getChildByName(tmp);
+		loc[i] = ropeSprite[i]->getPosition();
+		size[i] = ropeSprite[i]->getContentSize();
+
+		bodyDef.position.Set((loc[i].x + PntLoc.x) / PTM_RATIO, (loc[i].y + PntLoc.y) / PTM_RATIO);
+		bodyDef.userData = ropeSprite[i];
+		ropeBody[i] = _b2World->CreateBody(&bodyDef);
+		ropeBody[i]->SetGravityScale(0.1f);
+		boxShape.SetAsBox((size[i].width)*0.5f / PTM_RATIO, (size[i].height)*0.5f / PTM_RATIO);
+		ropeBody[i]->CreateFixture(&fixtureDef);
+	}
+	// 利用 RevoluteJoint 將線段彼此連接在一起
+	// 先連結 ropeHeadBody 與  ropeBody[0]
+
+	float locAnchor = 0.5f*(size[0].height - 5) / PTM_RATIO;
+	b2RevoluteJointDef revJoint;
+	revJoint.bodyA = ropeHeadBody;
+	revJoint.localAnchorA.Set(-sizeHead.width*scaleHeadX*0.5f / PTM_RATIO, 0);
+	revJoint.bodyB = ropeBody[0];
+	revJoint.localAnchorB.Set(0, locAnchor);
+	_b2World->CreateJoint(&revJoint);
+	for (int i = 0; i < 9; i++) {
+		revJoint.bodyA = ropeBody[i];
+		revJoint.localAnchorA.Set(0, -locAnchor);
+		revJoint.bodyB = ropeBody[i + 1];
+		revJoint.localAnchorB.Set(0, locAnchor);
+		_b2World->CreateJoint(&revJoint);
+	}
+	revJoint.bodyA = ropeBody[9];
+	revJoint.localAnchorA.Set(0, -locAnchor);
+	revJoint.bodyB = ropeEndBody;
+	revJoint.localAnchorB.Set(sizeEnd.width*scaleEndX*0.5f / PTM_RATIO, 0);
+	_b2World->CreateJoint(&revJoint);
+}
+void TwoScene::setupPulleyJoint()
+{
+	// 取得並設定 circle01_pul 為【動態物體A】
+	auto BtnSprite = (Sprite *)TwoBackground->getChildByName("button_1");
+	Point locA = BtnSprite->getPosition();
+	Size size = BtnSprite->getContentSize();
+	float scaleX = BtnSprite->getScaleX();
+	float scaleY = BtnSprite->getScaleY();
+	b2PolygonShape boxShape;
+	boxShape.SetAsBox((size.width - 4)*scaleX*0.5f / PTM_RATIO, (size.height - 4)*scaleY*0.5f / PTM_RATIO);
+
+	b2BodyDef bodyDef;
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position.Set(locA.x / PTM_RATIO, locA.y / PTM_RATIO);
+	bodyDef.userData = BtnSprite;
+	b2Body* bodyA = _b2World->CreateBody(&bodyDef);
+	b2FixtureDef fixtureDef;
+	fixtureDef.shape = &boxShape;
+	fixtureDef.density = 10.0f;
+	fixtureDef.friction = 5.0f;
+	bodyA->CreateFixture(&fixtureDef);
+
+	// 取得並設定 circle02_pul 為【動態物體B】
+	BtnSprite = (Sprite *)TwoBackground->getChildByName("button_2");
+	Point locB = BtnSprite->getPosition();
+	size = BtnSprite->getContentSize();
+	scaleX = BtnSprite->getScaleX();
+	scaleY = BtnSprite->getScaleY();
+	boxShape.SetAsBox((size.width - 4)*scaleX*0.5f / PTM_RATIO, (size.height - 4)*scaleY*0.5f / PTM_RATIO);
+
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position.Set(locB.x / PTM_RATIO, locB.y / PTM_RATIO);
+	bodyDef.userData = BtnSprite;
+	b2Body* bodyB = _b2World->CreateBody(&bodyDef);
+	fixtureDef.shape = &boxShape;
+	fixtureDef.density = 10.0f;
+	fixtureDef.friction = 5.0f;
+	bodyB->CreateFixture(&fixtureDef);
+
+	//產生滑輪關節
+	b2PulleyJointDef JointDef;
+	JointDef.Initialize(bodyA, bodyB,
+		b2Vec2(locA.x / PTM_RATIO, (locA.y + 50) / PTM_RATIO),
+		b2Vec2(locB.x / PTM_RATIO, (locA.y + 50) / PTM_RATIO),
+		bodyA->GetWorldCenter(),
+		bodyB->GetWorldCenter(),
+		1);
+	_b2World->CreateJoint(&JointDef);
 }
 void TwoScene::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
 {
@@ -211,126 +498,152 @@ void TwoScene::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
 }
 bool TwoScene::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 	Point touchLoc = pTouch->getLocation();
-	BeginLoc = touchLoc;
-	/*_ParticleControl._emitterPt = touchLoc;
-	_ParticleControl.setEmitter(true);*/
-	_bAirOpen = true;
+	if (AirBtn->touchesBegin(touchLoc)) {
+		_bMagnetOpen = false;
+		MagnetBtn->closebtn();
+	}
+	if (_bAirOpen) {
+		HeadAir = new AirDraw_Two;
+		HeadAir->pos = touchLoc;
+		HeadAir->NextAir = NULL;
+		NewAir = HeadAir;
+	}
+	if (SkipBtn->touchesBegin(touchLoc)) {
+		_bAirOpen = false;
+		AirBtn->closebtn(); 
+		_bMagnetOpen = false;
+		MagnetBtn->closebtn();
+	}
+	if (MagnetBtn->touchesBegin(touchLoc)) {
+		_bAirOpen = false;
+		AirBtn->closebtn();
+	}
 	return true;
 }
 void TwoScene::onTouchMoved(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 	Point touchLoc = pTouch->getLocation();
 	if (_bAirOpen) {
+		if (ccpDistance(NewAir->pos, touchLoc) >= 32) {
+			struct AirDraw_Two * Current = new AirDraw_Two;
+			Current->pos = touchLoc;
+			Current->NextAir = NULL;
+			NewAir->NextAir = Current;
+			NewAir = Current;
+		}
 	}
 }
 void TwoScene::onTouchEnded(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) {
 	Point touchLoc = pTouch->getLocation();
-	if (_bAirOpen) {
-		CreateAir(BeginLoc, touchLoc);
-		_bAirOpen = false;
+	if (AirBtn->touchesEnded(touchLoc)) {
+		_bAirOpen = !_bAirOpen;
+	}
+	else if (_bAirOpen) {
+		CreateAir();
+	}
+	if (MagnetBtn->touchesEnded(touchLoc)) {
+		_bMagnetOpen = !_bMagnetOpen;
+	}
+	else if (_bMagnetOpen) {
+		CreateMagnet(touchLoc);
+	}
+	if (SkipBtn->touchesEnded(touchLoc)) {
+		nextScene();
 	}
 }
-void TwoScene::CreateAir(cocos2d::Point Bpos, cocos2d::Point Epos) {
-	float dx = Epos.x - Bpos.x;
-	float dy = Epos.y - Bpos.y;
-	if (abs(dx) >= abs(dy)) {
-		if (dx >= 0) {
-			for (dx; dx >= 0; ) {
-				auto AirSprite = Sprite::createWithSpriteFrameName("dount01.png");
-				//auto AirSprite = Sprite::createWithSpriteFrameName("cloud.png");
-				AirSprite->setScale(0.5f);
-				this->addChild(AirSprite, 2);
-				b2BodyDef bodyDef;
-				bodyDef.type = b2_dynamicBody;
-				bodyDef.userData = AirSprite;
-				bodyDef.position.Set((Bpos.x + dx) / PTM_RATIO, (Bpos.y + dy) / PTM_RATIO);
-				b2Body *AirBody = _b2World->CreateBody(&bodyDef);
-				AirBody->SetGravityScale(-0.5f);
-				b2CircleShape ballShape;
-				Size ballsize = AirSprite->getContentSize();
-				ballShape.m_radius = 0.5f * (ballsize.width - 4) *0.5f / PTM_RATIO;
-				b2FixtureDef fixtureDef;
-				fixtureDef.shape = &ballShape;
-				fixtureDef.restitution = 0.75f;
-				fixtureDef.density = 5.0f;
-				fixtureDef.friction = 0.15f;
-				AirBody->CreateFixture(&fixtureDef);
-				dy = dy - 0.5f *(ballsize.width - 4)*(dy / dx);
-				dx = dx - 0.5f *(ballsize.width - 4);
-			}
-		}
-		else {
-			for (dx; dx < 0; ) {
-				auto AirSprite = Sprite::createWithSpriteFrameName("dount01.png");
-				AirSprite->setScale(0.5f);
-				this->addChild(AirSprite, 2);
-				b2BodyDef bodyDef;
-				bodyDef.type = b2_dynamicBody;
-				bodyDef.userData = AirSprite;
-				bodyDef.position.Set((Bpos.x + dx) / PTM_RATIO, (Bpos.y + dy) / PTM_RATIO);
-				b2Body *AirBody = _b2World->CreateBody(&bodyDef);
-				AirBody->SetGravityScale(-0.5f);
-				b2CircleShape ballShape;
-				Size ballsize = AirSprite->getContentSize();
-				ballShape.m_radius = 0.5f * (ballsize.width - 4) *0.5f / PTM_RATIO;
-				b2FixtureDef fixtureDef;
-				fixtureDef.shape = &ballShape;
-				fixtureDef.restitution = 0.75f;
-				fixtureDef.density = 5.0f;
-				fixtureDef.friction = 0.15f;
-				AirBody->CreateFixture(&fixtureDef);
-				dy = dy + 0.5f *(ballsize.width - 4)*(dy / dx);
-				dx = dx + 0.5f *(ballsize.width - 4);
-			}
-		}
+void TwoScene::CreateAir() {
+	for (NewAir = HeadAir; NewAir != NULL; NewAir = NewAir->NextAir) {
+		auto AirSprite = Sprite::createWithSpriteFrameName("new_cloud.png");
+		AirSprite->setScale(1.0f);
+		this->addChild(AirSprite, 2);
+		b2BodyDef bodyDef;
+		bodyDef.type = b2_dynamicBody;
+		bodyDef.userData = AirSprite;
+		bodyDef.position.Set((NewAir->pos).x / PTM_RATIO, (NewAir->pos).y / PTM_RATIO);
+		b2Body *AirBody = _b2World->CreateBody(&bodyDef);
+		AirBody->SetGravityScale(-1.0f);
+		b2CircleShape ballShape;
+		Size ballsize = AirSprite->getContentSize();
+		ballShape.m_radius = 0.5f * (ballsize.width - 4) *0.5f / PTM_RATIO;
+		b2FixtureDef fixtureDef;
+		fixtureDef.shape = &ballShape;
+		fixtureDef.restitution = 0.75f;
+		fixtureDef.density = 0.3f;
+		fixtureDef.friction = 0.15f;
+		AirBody->CreateFixture(&fixtureDef);
+		_b2World->SetContactListener(&_contactListener);
+		_contactListener.setCollisionTarget(*AirSprite);
+	}
+}
+void TwoScene::CreateMagnet(Point loc) {
+	if (NewMagnetSprite != NULL) {
+		removeChild(NewMagnetSprite);
+		_b2World->DestroyBody(NewMagnetBody);
+		NewMagnetBody = NULL;
+	}
+	NewMagnetSprite = Sprite::createWithSpriteFrameName("new_magnet.png");
+	NewMagnetSprite->setScale(1.0);
+	this->addChild(NewMagnetSprite, 2);
+	b2BodyDef bodyDef;
+	bodyDef.type = b2_staticBody;
+	bodyDef.userData = NewMagnetSprite;
+	bodyDef.position.Set(loc.x / PTM_RATIO, loc.y / PTM_RATIO);
+	NewMagnetBody = _b2World->CreateBody(&bodyDef);
+	NewMagnetBody->SetGravityScale(0);
+	b2PolygonShape boxShape;
+	boxShape.SetAsBox((NewMagnetSprite->getContentSize().width - 4)*0.5*0.4 / PTM_RATIO, (NewMagnetSprite->getContentSize().height - 4)*0.5*0.4 / PTM_RATIO);
+	b2FixtureDef fixtureDef;
+	fixtureDef.shape = &boxShape;
+	NewMagnetBody->CreateFixture(&fixtureDef);
+	b2PrismaticJointDef JointDef;
+	JointDef.Initialize(NewMagnetBody, MagnetBody, NewMagnetBody->GetPosition(), b2Vec2((NewMagnetBody->GetPosition().x) - (MagnetBody->GetPosition().x), (NewMagnetBody->GetPosition().y) - (MagnetBody->GetPosition().y)));
+	_b2World->CreateJoint(&JointDef);
+}
+void TwoScene::CreateWater() {
+	auto waters = (Sprite *)TwoBackground->getChildByName("water");
+	Point locwater = waters->getPosition();
+	waters->setVisible(false);
+	if (HeadWater == NULL) {
+		HeadWater = new water_Two;
+		HeadWater->_sprite = Sprite::createWithSpriteFrameName("flare.png");
+		HeadWater->_ftime = 0;
+		HeadWater->NextWater = NULL;
+		NewWater = HeadWater;
 	}
 	else {
-		if (dy >= 0) {
-			for (dy; dy >= 0; ) {
-				auto AirSprite = Sprite::createWithSpriteFrameName("dount01.png");
-				AirSprite->setScale(0.5f);
-				this->addChild(AirSprite, 2);
-				b2BodyDef bodyDef;
-				bodyDef.type = b2_dynamicBody;
-				bodyDef.userData = AirSprite;
-				bodyDef.position.Set((Bpos.x + dx) / PTM_RATIO, (Bpos.y + dy) / PTM_RATIO);
-				b2Body *AirBody = _b2World->CreateBody(&bodyDef);
-				AirBody->SetGravityScale(-0.5f);
-				b2CircleShape ballShape;
-				Size ballsize = AirSprite->getContentSize();
-				ballShape.m_radius = 0.5f * (ballsize.width - 4) *0.5f / PTM_RATIO;
-				b2FixtureDef fixtureDef;
-				fixtureDef.shape = &ballShape;
-				fixtureDef.restitution = 0.75f;
-				fixtureDef.density = 5.0f;
-				fixtureDef.friction = 0.15f;
-				AirBody->CreateFixture(&fixtureDef);
-				dx = dx - 0.5f *(ballsize.width - 4)*(dx / dy);
-				dy = dy - 0.5f *(ballsize.width - 4);
-			}
-		}
-		else {
-			for (dy; dy < 0; ) {
-				auto AirSprite = Sprite::createWithSpriteFrameName("dount01.png");
-				AirSprite->setScale(0.5f);
-				this->addChild(AirSprite, 2);
-				b2BodyDef bodyDef;
-				bodyDef.type = b2_dynamicBody;
-				bodyDef.userData = AirSprite;
-				bodyDef.position.Set((Bpos.x + dx) / PTM_RATIO, (Bpos.y + dy) / PTM_RATIO);
-				b2Body *AirBody = _b2World->CreateBody(&bodyDef);
-				AirBody->SetGravityScale(-0.5f);
-				b2CircleShape ballShape;
-				Size ballsize = AirSprite->getContentSize();
-				ballShape.m_radius = 0.5f * (ballsize.width - 4) *0.5f / PTM_RATIO;
-				b2FixtureDef fixtureDef;
-				fixtureDef.shape = &ballShape;
-				fixtureDef.restitution = 0.75f;
-				fixtureDef.density = 5.0f;
-				fixtureDef.friction = 0.15f;
-				AirBody->CreateFixture(&fixtureDef);
-				dx = dx + 0.5f *(ballsize.width - 4)*(dx / dy);
-				dy = dy + 0.5f *(ballsize.width - 4);
-			}
-		}
+		struct water_Two * Current = new water_Two;
+		Current->_ftime = 0;
+		Current->_sprite = Sprite::createWithSpriteFrameName("flare.png");
+		Current->NextWater = NULL;
+		NewWater->NextWater = Current;
+		NewWater = Current;
 	}
+	if (NewWater != NULL) {
+		NewWater->_sprite->setScale(0.5f);
+		this->addChild(NewWater->_sprite, 2);
+		b2BodyDef bodyDef;
+		bodyDef.type = b2_dynamicBody;
+		bodyDef.userData = NewWater->_sprite;
+		bodyDef.position.Set(locwater.x / PTM_RATIO, locwater.y / PTM_RATIO);
+		b2Body *waterBody = _b2World->CreateBody(&bodyDef);
+		b2CircleShape ballShape;
+		Size ballsize = NewWater->_sprite->getContentSize();
+		ballShape.m_radius = 0.5f * (ballsize.width - 35) *0.5f / PTM_RATIO;
+		b2FixtureDef fixtureDef;
+		fixtureDef.shape = &ballShape;
+		fixtureDef.restitution = 0.0f;
+		fixtureDef.density = 1.0f;
+		fixtureDef.friction = 0.15f;
+		waterBody->CreateFixture(&fixtureDef);
+	}
+}
+void TwoScene::nextScene() {
+	// 先將這個 SCENE 的 Update(這裡使用 OnFrameMove, 從 schedule update 中移出)
+	this->unschedule(schedule_selector(TwoScene::doStep));
+	//SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("mainscene.plist");
+	// 上面這行何時需要放在這裡稍後會說明
+	// 設定場景切換的特效
+	TransitionFade *pageTurn = TransitionFade::create(1.0f, ThreeScene::createScene());
+	Director::getInstance()->replaceScene(pageTurn);
+	//SimpleAudioEngine::getInstance()->stopBackgroundMusic();
+
 }

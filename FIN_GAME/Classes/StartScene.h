@@ -7,7 +7,7 @@
 class StartScene : public cocos2d::Layer
 {
 private:
-	CButton * OnePage;
+	CButton * StartBtn;
 public:
 
 	~StartScene();

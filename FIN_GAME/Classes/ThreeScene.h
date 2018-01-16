@@ -8,21 +8,68 @@
 #include "Common/CButton.h"
 #include "Common/GLES-Render.h"
 
+struct AirDraw_Three
+{
+	cocos2d::Point pos;
+	struct AirDraw_Three * NextAir;
+};
+struct water_Three
+{
+	cocos2d::Sprite * _sprite;
+	float _ftime = 0;
+	struct water_Three * NextWater;
+};
+struct AirDiet_Three {
+	cocos2d::Sprite * _sprite;
+	bool _bAir = false;
+	struct AirDiet_Three * _NexttargetSprite;
+};
+class CContactListener_Three : public b2ContactListener
+{
+public:
+	struct AirDiet_Three * _HeadtargetSprite = NULL;
+	struct AirDiet_Three * _NewtargetSprite;
+	cocos2d::Sprite * _Playersprite;
+	cocos2d::Sprite * _carsprite;
+	int _iBridgeNum = 0;
+	bool win = false;
+
+	CContactListener_Three();
+	//碰撞開始
+	virtual void BeginContact(b2Contact* contact);
+	//碰撞結束
+	virtual void EndContact(b2Contact* contact);
+	void setCollisionTarget(cocos2d::Sprite &targetSprite);
+	void setCollisionTargetCar(cocos2d::Sprite &targetSprite);
+	void setCollisionTargetPlayer(cocos2d::Sprite &targetSprite);
+};
 class ThreeScene : public cocos2d::Layer
 {
 private:
+	CButton * SkipBtn;
+	CButton * AirBtn;
+	CButton * MagnetBtn;
 	b2World* _b2World;
-	b2Body *rectBody;
+	b2Body *playerBody;
+	b2Body *MagnetBody = NULL;
+	b2Body *NewMagnetBody;
+	b2Body *dynamicwheelBody = NULL;
 	cocos2d::Size visibleSize;
 	cocos2d::Vec2 origin;
-	cocos2d::Node * TwoBackground;
+	cocos2d::Node * ThreeBackground;
 	cocos2d::Point PntLoc;
-	cocos2d::Sprite * PlayerSprite;
-	cocos2d::Sprite * AirSprite;
-	cocos2d::Point BeginLoc;
+	cocos2d::Sprite * NewMagnetSprite;
 	float _fGameTime = 0;
+	float _fCarTime = 0;
 	bool _bAirOpen = false;
+	bool _bMagnetOpen = false;
 	bool _bPlayerGo = false;
+	bool _bCarOpen = true;
+	bool _bCarGo = false;
+
+	CContactListener_Three _contactListener;
+	struct AirDraw_Three * HeadAir;
+	struct AirDraw_Three * NewAir;
 
 	GLESDebugDraw* _DebugDraw;
 	virtual void draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags);
@@ -36,8 +83,16 @@ public:
 	virtual bool init();
 	void doStep(float dt);
 
+	void nextScene();
 	void readSceneFile();
-	void CreateAir(cocos2d::Point Bpos, cocos2d::Point Epos);
+	void setupWinSensor();
+	void setupRopeJoint();
+	void setupStartJoint();
+	void setupLightJoint();
+	void setupBridgeSensor();
+	void setupCar();
+	void CreateAir();
+	void CreateMagnet(cocos2d::Point loc); //磁鐵
 
 	cocos2d::EventListenerTouchOneByOne *_listener1;
 	bool onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent); //觸碰開始事件
