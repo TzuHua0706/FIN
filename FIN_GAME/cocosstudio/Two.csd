@@ -326,6 +326,18 @@
             <OutlineColor A="255" R="255" G="0" B="0" />
             <ShadowColor A="255" R="110" G="110" B="110" />
           </AbstractNodeData>
+          <AbstractNodeData Name="Time" ActionTag="686934825" Tag="118" IconVisible="False" LeftMargin="1057.5638" RightMargin="-1093.5638" TopMargin="-623.7631" BottomMargin="547.7631" FontSize="72" LabelText="3" ShadowOffsetX="2.0000" ShadowOffsetY="-2.0000" ctype="TextObjectData">
+            <Size X="36.0000" Y="76.0000" />
+            <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
+            <Position X="1075.5638" Y="585.7631" />
+            <Scale ScaleX="1.0000" ScaleY="1.0000" />
+            <CColor A="255" R="0" G="19" B="60" />
+            <PrePosition />
+            <PreSize X="0.0000" Y="0.0000" />
+            <FontResource Type="Normal" Path="Marker Felt.ttf" Plist="" />
+            <OutlineColor A="255" R="255" G="0" B="0" />
+            <ShadowColor A="255" R="110" G="110" B="110" />
+          </AbstractNodeData>
         </Children>
       </ObjectData>
     </Content>

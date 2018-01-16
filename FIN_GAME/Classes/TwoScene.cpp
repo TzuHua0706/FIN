@@ -105,7 +105,11 @@ bool TwoScene::init()
 	return true;
 }
 void TwoScene::doStep(float dt) {
-	_fGameTime += dt;
+	_fGameTime += dt; 
+	auto time_text = (cocos2d::ui::Text *)TwoBackground->getChildByName("Time");
+	if (_fGameTime >= 3)time_text->setText(":)");
+	else if (_fGameTime >= 2)time_text->setText("1");
+	else if (_fGameTime >= 1)time_text->setText("2");
 	_fWaterTime += dt;
 	if (_fWaterTime >= 0.15) { CreateWater(); _fWaterTime = 0; }
 	if (NewMagnetBody != NULL)
