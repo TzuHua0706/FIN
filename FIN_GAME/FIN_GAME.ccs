@@ -79,6 +79,7 @@
           <PlistImageFile Name="new_ballon_2.png" Key="new_ballon_2.png" />
           <PlistImageFile Name="new_ballon_3.png" Key="new_ballon_3.png" />
           <PlistImageFile Name="new_bird.png" Key="new_bird.png" />
+          <PlistImageFile Name="new_btn.png" Key="new_btn.png" />
           <PlistImageFile Name="new_circle_light.png" Key="new_circle_light.png" />
           <PlistImageFile Name="new_cloud.png" Key="new_cloud.png" />
           <PlistImageFile Name="new_cloud_normal.png" Key="new_cloud_normal.png" />
@@ -118,7 +119,7 @@
           <PlistImageFile Name="people_sit_6.png" Key="people_sit_6.png" />
           <PlistImageFile Name="skip_normal.png" Key="skip_normal.png" />
           <PlistImageFile Name="skip_on.png" Key="skip_on.png" />
-          <PlistImageFile Name="new_btn.png" Key="new_btn.png" />
+          <PlistImageFile Name="new_arrow.png" Key="new_arrow.png" />
         </PlistImageFolder>
         <Fnt Name="couriernew32.fnt" />
         <Project Name="Four.csd" Type="Node" />
