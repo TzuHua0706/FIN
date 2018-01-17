@@ -110,10 +110,20 @@ bool OneScene::init()
 }
 void OneScene::doStep(float dt) {
 	_fGameTime += dt;
-	auto time_text = (cocos2d::ui::Text *)OneBackground->getChildByName("Time");
-	if (_fGameTime >= 3)time_text->setText(":)");
-	else if (_fGameTime >= 2)time_text->setText("1");
-	else if (_fGameTime >= 1)time_text->setText("2");
+	if (!_bStart) {
+		auto time_text = (cocos2d::ui::Text *)OneBackground->getChildByName("Time");
+		auto arrow_Sprite = (Sprite *)OneBackground->getChildByName("new_arrow");
+		if (_fGameTime >= 3) {
+			time_text->setText(":)");
+			auto MoveAction = cocos2d::MoveTo::create(1.7f, Point(1380, 585.76));
+			time_text->runAction(MoveAction);
+			auto MoveAction_2 = cocos2d::MoveTo::create(3.0f, Point(1580, 585.76));
+			arrow_Sprite->runAction(MoveAction_2);
+			_bStart = true;
+		}
+		else if (_fGameTime >= 2)time_text->setText("1");
+		else if (_fGameTime >= 1)time_text->setText("2");
+	}
 	int velocityIterations = 8; // 速度迭代次數
 								// 位置迭代次數，迭代次數一般設定為8~10 越高越真實但效率越差
 	int positionIterations = 1;

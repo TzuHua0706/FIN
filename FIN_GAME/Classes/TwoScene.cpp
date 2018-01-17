@@ -112,10 +112,20 @@ bool TwoScene::init()
 }
 void TwoScene::doStep(float dt) {
 	_fGameTime += dt; 
-	auto time_text = (cocos2d::ui::Text *)TwoBackground->getChildByName("Time");
-	if (_fGameTime >= 3)time_text->setText(":)");
-	else if (_fGameTime >= 2)time_text->setText("1");
-	else if (_fGameTime >= 1)time_text->setText("2");
+	if (!_bStart) {
+		auto time_text = (cocos2d::ui::Text *)TwoBackground->getChildByName("Time");
+		auto arrow_Sprite = (Sprite *)TwoBackground->getChildByName("new_arrow");
+		if (_fGameTime >= 3) {
+			time_text->setText(":)");
+			auto MoveAction = cocos2d::MoveTo::create(1.7f, Point(1380, 585.76));
+			time_text->runAction(MoveAction);
+			auto MoveAction_2 = cocos2d::MoveTo::create(3.0f, Point(1580, 585.76));
+			arrow_Sprite->runAction(MoveAction_2);
+			_bStart = true;
+		}
+		else if (_fGameTime >= 2)time_text->setText("1");
+		else if (_fGameTime >= 1)time_text->setText("2");
+	}
 	_fWaterTime += dt;
 	if (_fWaterTime >= 0.15) { CreateWater(); _fWaterTime = 0; }
 	if (NewMagnetBody != NULL)

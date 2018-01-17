@@ -63,6 +63,7 @@ private:
 	bool _bAirOpen = false;
 	bool _bMagnetOpen = false;
 	bool _bPlayerGo = false;
+	bool _bStart = false;
 
 	CContactListener_Two _contactListener;
 	struct AirDraw_Two * HeadAir;

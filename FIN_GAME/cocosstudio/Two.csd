@@ -326,10 +326,10 @@
             <OutlineColor A="255" R="255" G="0" B="0" />
             <ShadowColor A="255" R="110" G="110" B="110" />
           </AbstractNodeData>
-          <AbstractNodeData Name="new_arrow_1" ActionTag="1117352862" Tag="126" IconVisible="False" LeftMargin="867.6467" RightMargin="-1267.6467" TopMargin="-770.6187" BottomMargin="420.6187" ctype="SpriteObjectData">
+          <AbstractNodeData Name="new_arrow" ActionTag="1117352862" Tag="126" IconVisible="False" LeftMargin="867.6467" RightMargin="-1267.6467" TopMargin="-760.7600" BottomMargin="410.7600" ctype="SpriteObjectData">
             <Size X="400.0000" Y="350.0000" />
             <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
-            <Position X="1067.6467" Y="595.6187" />
+            <Position X="1067.6467" Y="585.7600" />
             <Scale ScaleX="1.0000" ScaleY="1.0000" />
             <CColor A="255" R="255" G="255" B="255" />
             <PrePosition />

@@ -95,10 +95,10 @@
             <OutlineColor A="255" R="255" G="0" B="0" />
             <ShadowColor A="255" R="110" G="110" B="110" />
           </AbstractNodeData>
-          <AbstractNodeData Name="new_arrow_1" ActionTag="1378533632" Tag="125" IconVisible="False" LeftMargin="867.6467" RightMargin="-1267.6467" TopMargin="-770.6187" BottomMargin="420.6187" ctype="SpriteObjectData">
+          <AbstractNodeData Name="new_arrow" ActionTag="1378533632" Tag="125" IconVisible="False" LeftMargin="867.6000" RightMargin="-1267.6000" TopMargin="-760.7600" BottomMargin="410.7600" ctype="SpriteObjectData">
             <Size X="400.0000" Y="350.0000" />
             <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
-            <Position X="1067.6467" Y="595.6187" />
+            <Position X="1067.6000" Y="585.7600" />
             <Scale ScaleX="1.0000" ScaleY="1.0000" />
             <CColor A="255" R="255" G="255" B="255" />
             <PrePosition />
@@ -106,10 +106,10 @@
             <FileData Type="PlistSubImage" Path="new_arrow.png" Plist="new_img.plist" />
             <BlendFunc Src="1" Dst="771" />
           </AbstractNodeData>
-          <AbstractNodeData Name="Time" ActionTag="1516653654" Tag="87" IconVisible="False" LeftMargin="1057.5638" RightMargin="-1093.5638" TopMargin="-623.7631" BottomMargin="547.7631" FontSize="72" LabelText="3" ShadowOffsetX="2.0000" ShadowOffsetY="-2.0000" ctype="TextObjectData">
+          <AbstractNodeData Name="Time" ActionTag="1516653654" Tag="87" IconVisible="False" LeftMargin="1057.5601" RightMargin="-1093.5601" TopMargin="-623.7600" BottomMargin="547.7600" FontSize="72" LabelText="3" ShadowOffsetX="2.0000" ShadowOffsetY="-2.0000" ctype="TextObjectData">
             <Size X="36.0000" Y="76.0000" />
             <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
-            <Position X="1075.5638" Y="585.7631" />
+            <Position X="1075.5601" Y="585.7600" />
             <Scale ScaleX="1.0000" ScaleY="1.0000" />
             <CColor A="255" R="0" G="19" B="60" />
             <PrePosition />

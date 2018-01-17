@@ -52,6 +52,7 @@ private:
 	float _fGameTime = 0;
 	bool _bAirOpen = false;
 	bool _bPlayerGo = false;
+	bool _bStart = false;
 
 	CContactListener _contactListener;
 	struct AirDraw * HeadAir;
