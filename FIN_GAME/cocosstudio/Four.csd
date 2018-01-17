@@ -491,6 +491,16 @@
             <OutlineColor A="255" R="255" G="0" B="0" />
             <ShadowColor A="255" R="110" G="110" B="110" />
           </AbstractNodeData>
+          <AbstractNodeData Name="music_bg" ActionTag="1074965961" Tag="204" IconVisible="True" LeftMargin="58.9026" RightMargin="-58.9026" TopMargin="-37.8659" BottomMargin="37.8659" Volume="1.0000" Loop="True" ctype="SimpleAudioObjectData">
+            <Size X="0.0000" Y="0.0000" />
+            <AnchorPoint />
+            <Position X="58.9026" Y="37.8659" />
+            <Scale ScaleX="1.0000" ScaleY="1.0000" />
+            <CColor A="255" R="255" G="255" B="255" />
+            <PrePosition />
+            <PreSize X="0.0000" Y="0.0000" />
+            <FileData Type="Normal" Path="game music.mp3" Plist="" />
+          </AbstractNodeData>
         </Children>
       </ObjectData>
     </Content>

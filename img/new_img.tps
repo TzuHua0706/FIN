@@ -199,6 +199,59 @@
         </struct>
         <key>individualSpriteSettings</key>
         <map type="IndividualSpriteSettingsMap">
+            <key type="filename">main_L_1.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>20,138,40,275</rect>
+                <key>scale9Paddings</key>
+                <rect>20,138,40,275</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main_L_2.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>138,50,275,100</rect>
+                <key>scale9Paddings</key>
+                <rect>138,50,275,100</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main_left.png</key>
+            <key type="filename">main_right.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>50,50,100,100</rect>
+                <key>scale9Paddings</key>
+                <rect>50,50,100,100</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main_rope.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>5,75,10,150</rect>
+                <key>scale9Paddings</key>
+                <rect>5,75,10,150</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
             <key type="filename">new people_1.png</key>
             <key type="filename">new people_2.png</key>
             <key type="filename">new_light.png</key>
@@ -212,6 +265,19 @@
                 <rect>75,88,150,175</rect>
                 <key>scale9Paddings</key>
                 <rect>75,88,150,175</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">new_arrow.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>100,88,200,175</rect>
+                <key>scale9Paddings</key>
+                <rect>100,88,200,175</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
@@ -244,7 +310,14 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
+            <key type="filename">new_btn.png</key>
             <key type="filename">new_circle_light.png</key>
+            <key type="filename">new_fishing.png</key>
+            <key type="filename">new_fishing_btn.png</key>
+            <key type="filename">new_ghost.png</key>
+            <key type="filename">new_light_btn.png</key>
+            <key type="filename">new_start_btn.png</key>
+            <key type="filename">new_win.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>
@@ -260,9 +333,17 @@
             <key type="filename">new_cloud.png</key>
             <key type="filename">new_cloud_normal.png</key>
             <key type="filename">new_cloud_on.png</key>
+            <key type="filename">new_home.png</key>
+            <key type="filename">new_home_on.png</key>
             <key type="filename">new_magnet.png</key>
             <key type="filename">new_magnet_normal.png</key>
             <key type="filename">new_magnet_on.png</key>
+            <key type="filename">new_play.png</key>
+            <key type="filename">new_play_on.png</key>
+            <key type="filename">new_replay.png</key>
+            <key type="filename">new_replay_on.png</key>
+            <key type="filename">new_stop.png</key>
+            <key type="filename">new_stop_on.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>
@@ -276,6 +357,7 @@
                 <false/>
             </struct>
             <key type="filename">new_fish.png</key>
+            <key type="filename">new_fish_2.png</key>
             <key type="filename">new_metal.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
@@ -313,6 +395,38 @@
                 <rect>2,5,4,10</rect>
                 <key>scale9Paddings</key>
                 <rect>2,5,4,10</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">new_wood.png</key>
+            <key type="filename">new_wood_btn.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>16,19,31,37</rect>
+                <key>scale9Paddings</key>
+                <rect>16,19,31,37</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">people_sit_0.png</key>
+            <key type="filename">people_sit_2.png</key>
+            <key type="filename">people_sit_3.png</key>
+            <key type="filename">people_sit_4.png</key>
+            <key type="filename">people_sit_5.png</key>
+            <key type="filename">people_sit_6.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>75,95,150,190</rect>
+                <key>scale9Paddings</key>
+                <rect>75,95,150,190</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
@@ -356,6 +470,36 @@
             <filename>new_light.png</filename>
             <filename>new_light_2.png</filename>
             <filename>new_circle_light.png</filename>
+            <filename>new_start_btn.png</filename>
+            <filename>new_wood.png</filename>
+            <filename>new_wood_btn.png</filename>
+            <filename>new_win.png</filename>
+            <filename>new_fishing_btn.png</filename>
+            <filename>new_ghost.png</filename>
+            <filename>new_fishing.png</filename>
+            <filename>new_light_btn.png</filename>
+            <filename>new_fish_2.png</filename>
+            <filename>new_stop_on.png</filename>
+            <filename>new_stop.png</filename>
+            <filename>new_home_on.png</filename>
+            <filename>new_home.png</filename>
+            <filename>new_play.png</filename>
+            <filename>new_play_on.png</filename>
+            <filename>new_replay.png</filename>
+            <filename>new_replay_on.png</filename>
+            <filename>main_right.png</filename>
+            <filename>main_left.png</filename>
+            <filename>main_L_2.png</filename>
+            <filename>main_rope.png</filename>
+            <filename>main_L_1.png</filename>
+            <filename>people_sit_6.png</filename>
+            <filename>people_sit_0.png</filename>
+            <filename>people_sit_3.png</filename>
+            <filename>people_sit_4.png</filename>
+            <filename>people_sit_5.png</filename>
+            <filename>people_sit_2.png</filename>
+            <filename>new_btn.png</filename>
+            <filename>new_arrow.png</filename>
         </array>
         <key>ignoreFileList</key>
         <array/>

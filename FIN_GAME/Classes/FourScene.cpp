@@ -27,6 +27,9 @@ Scene* FourScene::createScene(const int score)
 FourScene::~FourScene()
 {
 	if (_b2World != nullptr) delete _b2World;
+	this->removeAllChildren();
+	SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("mainscene.plist");
+	Director::getInstance()->getTextureCache()->removeUnusedTextures();
 }
 
 bool FourScene::init()
@@ -40,14 +43,14 @@ bool FourScene::init()
 	{
 		return false;
 	}
-	for (int i = 0; i < 5; i++) {
-		_bBird[i] = rand() % 2;
-		_fSpeed[i] = rand() % 5 + 5;
-	}
 
 	FourBackground = CSLoader::createNode("Four.csb");
 	addChild(FourBackground);
 	PntLoc = FourBackground->getPosition();
+
+	//Music
+	auto bkmusic = (cocostudio::ComAudio *)FourBackground->getChildByName("music_bg")->getComponent("music_bg");
+	bkmusic->playBackgroundMusic();
 
 	//Button
 	AirBtn = CButton::create();
@@ -81,6 +84,15 @@ bool FourScene::init()
 	CreateFish();
 	setupWinSensor();
 	CreatePlayer();
+
+	for (int i = 0; i < 5; i++) {
+		_bBird[i] = rand() % 2;
+		_fSpeed[i] = rand() % 5 + 5;
+		if (!_bBird[i])
+			birdSprite[i]->setRotationY(0);
+		else
+			birdSprite[i]->setRotationY(180);
+	}
 
 	if (BOX2D_DEBUG) {
 		//DebugDrawInit
@@ -186,6 +198,8 @@ void FourScene::doStep(float dt) {
 				if (dynamicBirdBody[i]->GetPosition().x*PTM_RATIO < 300 && !_bBird[i]) {
 					_bBird[i] = true;
 					_fSpeed[i] = rand() % 10;
+					//轉向
+					birdSprite[i]->setRotationY(180);
 				}
 				if (_bBird[i]) {
 					dynamicBirdBody[i]->SetTransform(b2Vec2((dynamicBirdBody[i]->GetPosition().x) + dt * _fSpeed[i], (dynamicBirdBody[i]->GetPosition().y)), dynamicBirdBody[i]->GetAngle());
@@ -193,6 +207,8 @@ void FourScene::doStep(float dt) {
 				if (dynamicBirdBody[i]->GetPosition().x*PTM_RATIO > 1100 && _bBird) {
 					_bBird[i] = false;
 					_fSpeed[i] = rand() % 10;
+					//轉向
+					birdSprite[i]->setRotationY(0);
 				}
 			}
 		}
@@ -883,7 +899,8 @@ void FourScene::CreateFish() {
 void FourScene::StartScene() {
 	// 先將這個 SCENE 的 Update(這裡使用 OnFrameMove, 從 schedule update 中移出)
 	this->unschedule(schedule_selector(FourScene::doStep));
-	//SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("mainscene.plist");
+	SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("mainscene.plist");
+	removeAllChildren();
 	// 上面這行何時需要放在這裡稍後會說明
 	// 設定場景切換的特效
 	TransitionFade *pageTurn = TransitionFade::create(1.0f, StartScene::createScene());

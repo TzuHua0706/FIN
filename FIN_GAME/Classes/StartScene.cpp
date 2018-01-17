@@ -1,5 +1,6 @@
 #include "StartScene.h"
 #include "cocostudio/CocoStudio.h"
+#include "SimpleAudioEngine.h"
 #include "ui/CocosGUI.h"
 #include "OneScene.h"
 #include "TwoScene.h"
@@ -26,6 +27,9 @@ Scene* StartScene::createScene()
 }
 StartScene::~StartScene()
 {
+	this->removeAllChildren();
+	SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("mainscene.plist");
+	Director::getInstance()->getTextureCache()->removeUnusedTextures();
 
 }
 
@@ -44,10 +48,16 @@ bool StartScene::init()
 	auto rootNode = CSLoader::createNode("StartScene.csb");
 	addChild(rootNode);
 
-	StartBtn = CButton::create();
-	StartBtn->setButtonInfo("dnarrow.png", "dnarrowon.png", "dnarrow.png", Point(visibleSize.width / 2.0f, 50.0f), true);
-	StartBtn->setScale(0.75f);
-	this->addChild(StartBtn, 10);
+	//Music
+	auto bkmusic = (cocostudio::ComAudio *)rootNode->getChildByName("music_bg")->getComponent("music_bg");
+	bkmusic->playBackgroundMusic();
+
+	startbtn = (Sprite *)rootNode->getChildByName("main_right");
+	auto _BtnSize = startbtn->getContentSize();
+	auto _BtnLoc = startbtn->getPosition();
+	_BtnRect.size = _BtnSize;
+	_BtnRect.origin.x = _BtnLoc.x - _BtnSize.width*0.5f;
+	_BtnRect.origin.y = _BtnLoc.y - _BtnSize.height*0.5f;
 
 	_listener1 = EventListenerTouchOneByOne::create();	//創建一個一對一的事件聆聽器
 	_listener1->onTouchBegan = CC_CALLBACK_2(StartScene::onTouchBegan, this);		//加入觸碰開始事件
@@ -63,22 +73,19 @@ void StartScene::doStep(float dt) {
 }
 bool StartScene::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent){
 	Point touchLoc = pTouch->getLocation();
-	if (StartBtn->touchesBegin(touchLoc)) {
+	if (_BtnRect.containsPoint(touchLoc)) {
+		this->unschedule(schedule_selector(StartScene::doStep));
+		removeAllChildren();
+		SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("mainscene.plist");
 		auto scene = OneScene::createScene(0);
-		//auto scene = TwoScene::createScene();
-		//auto scene = ThreeScene::createScene(0);
-		//auto scene = FourScene::createScene();
 		Director::sharedDirector()->replaceScene(TransitionFade::create(0.5f, scene));
+		//SimpleAudioEngine::getInstance()->stopBackgroundMusic();
 	}
 	return true;
 }
 void StartScene::onTouchMoved(cocos2d::Touch *pTouch, cocos2d::Event *pEvent){
 	Point touchLoc = pTouch->getLocation();
-	if (StartBtn->touchesMoved(touchLoc)) {
-	}
 }
 void StartScene::onTouchEnded(cocos2d::Touch *pTouch, cocos2d::Event *pEvent){
 	Point touchLoc = pTouch->getLocation();
-	if (StartBtn->touchesEnded(touchLoc)) {
-	}
 }

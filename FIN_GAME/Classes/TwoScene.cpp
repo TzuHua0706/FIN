@@ -28,6 +28,9 @@ Scene* TwoScene::createScene(const int score)
 TwoScene::~TwoScene()
 {
 	if (_b2World != nullptr) delete _b2World;
+	this->removeAllChildren();
+	SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("mainscene.plist");
+	Director::getInstance()->getTextureCache()->removeUnusedTextures();
 }
 
 bool TwoScene::init()
@@ -46,6 +49,9 @@ bool TwoScene::init()
 	addChild(TwoBackground);
 	PntLoc = TwoBackground->getPosition();
 
+	//Music
+	auto bkmusic = (cocostudio::ComAudio *)TwoBackground->getChildByName("music_bg")->getComponent("music_bg");
+	bkmusic->playBackgroundMusic();
 	//Button
 	AirBtn = CButton::create();
 	AirBtn->setButtonInfo("new_cloud_normal.png", "new_cloud_on.png", "new_cloud.png", Point(1180.0f, 685.0f), true);
@@ -670,7 +676,8 @@ void TwoScene::CreateWater() {
 void TwoScene::nextScene() {
 	// 先將這個 SCENE 的 Update(這裡使用 OnFrameMove, 從 schedule update 中移出)
 	this->unschedule(schedule_selector(TwoScene::doStep));
-	//SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("mainscene.plist");
+	removeAllChildren();
+	SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("mainscene.plist");
 	// 上面這行何時需要放在這裡稍後會說明
 	// 設定場景切換的特效
 	TransitionFade *pageTurn = TransitionFade::create(1.0f, ThreeScene::createScene(score));

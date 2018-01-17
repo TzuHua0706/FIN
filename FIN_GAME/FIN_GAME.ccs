@@ -67,6 +67,11 @@
           <PlistImageFile Name="wheel.png" Key="wheel.png" />
         </PlistImageFolder>
         <PlistImageFolder Image="new_img.png" PListFile="new_img.plist" Name=".new_img_PList.Dir">
+          <PlistImageFile Name="main_L_1.png" Key="main_L_1.png" />
+          <PlistImageFile Name="main_L_2.png" Key="main_L_2.png" />
+          <PlistImageFile Name="main_left.png" Key="main_left.png" />
+          <PlistImageFile Name="main_right.png" Key="main_right.png" />
+          <PlistImageFile Name="main_rope.png" Key="main_rope.png" />
           <PlistImageFile Name="new people_1.png" Key="new people_1.png" />
           <PlistImageFile Name="new people_2.png" Key="new people_2.png" />
           <PlistImageFile Name="new_ballon.png" Key="new_ballon.png" />
@@ -94,6 +99,10 @@
           <PlistImageFile Name="new_magnet_normal.png" Key="new_magnet_normal.png" />
           <PlistImageFile Name="new_magnet_on.png" Key="new_magnet_on.png" />
           <PlistImageFile Name="new_metal.png" Key="new_metal.png" />
+          <PlistImageFile Name="new_play.png" Key="new_play.png" />
+          <PlistImageFile Name="new_play_on.png" Key="new_play_on.png" />
+          <PlistImageFile Name="new_replay.png" Key="new_replay.png" />
+          <PlistImageFile Name="new_replay_on.png" Key="new_replay_on.png" />
           <PlistImageFile Name="new_rope.png" Key="new_rope.png" />
           <PlistImageFile Name="new_start_btn.png" Key="new_start_btn.png" />
           <PlistImageFile Name="new_stop.png" Key="new_stop.png" />
@@ -101,16 +110,21 @@
           <PlistImageFile Name="new_win.png" Key="new_win.png" />
           <PlistImageFile Name="new_wood.png" Key="new_wood.png" />
           <PlistImageFile Name="new_wood_btn.png" Key="new_wood_btn.png" />
+          <PlistImageFile Name="people_sit_0.png" Key="people_sit_0.png" />
+          <PlistImageFile Name="people_sit_2.png" Key="people_sit_2.png" />
+          <PlistImageFile Name="people_sit_3.png" Key="people_sit_3.png" />
+          <PlistImageFile Name="people_sit_4.png" Key="people_sit_4.png" />
+          <PlistImageFile Name="people_sit_5.png" Key="people_sit_5.png" />
+          <PlistImageFile Name="people_sit_6.png" Key="people_sit_6.png" />
           <PlistImageFile Name="skip_normal.png" Key="skip_normal.png" />
           <PlistImageFile Name="skip_on.png" Key="skip_on.png" />
-          <PlistImageFile Name="new_play.png" Key="new_play.png" />
-          <PlistImageFile Name="new_play_on.png" Key="new_play_on.png" />
-          <PlistImageFile Name="new_replay.png" Key="new_replay.png" />
-          <PlistImageFile Name="new_replay_on.png" Key="new_replay_on.png" />
+          <PlistImageFile Name="new_btn.png" Key="new_btn.png" />
         </PlistImageFolder>
         <Fnt Name="couriernew32.fnt" />
         <Project Name="Four.csd" Type="Node" />
+        <Audio Name="game music.mp3" />
         <TTF Name="HKYuanMini.ttf" />
+        <Image Name="main_bg.jpg" />
         <TTF Name="Marker Felt.ttf" />
         <Image Name="new_bg_1.jpg" />
         <Image Name="new_bg_2.jpg" />

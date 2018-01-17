@@ -95,6 +95,17 @@
             <OutlineColor A="255" R="255" G="0" B="0" />
             <ShadowColor A="255" R="110" G="110" B="110" />
           </AbstractNodeData>
+          <AbstractNodeData Name="new_arrow_1" ActionTag="1378533632" Tag="125" IconVisible="False" LeftMargin="867.6467" RightMargin="-1267.6467" TopMargin="-770.6187" BottomMargin="420.6187" ctype="SpriteObjectData">
+            <Size X="400.0000" Y="350.0000" />
+            <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
+            <Position X="1067.6467" Y="595.6187" />
+            <Scale ScaleX="1.0000" ScaleY="1.0000" />
+            <CColor A="255" R="255" G="255" B="255" />
+            <PrePosition />
+            <PreSize X="0.0000" Y="0.0000" />
+            <FileData Type="PlistSubImage" Path="new_arrow.png" Plist="new_img.plist" />
+            <BlendFunc Src="1" Dst="771" />
+          </AbstractNodeData>
           <AbstractNodeData Name="Time" ActionTag="1516653654" Tag="87" IconVisible="False" LeftMargin="1057.5638" RightMargin="-1093.5638" TopMargin="-623.7631" BottomMargin="547.7631" FontSize="72" LabelText="3" ShadowOffsetX="2.0000" ShadowOffsetY="-2.0000" ctype="TextObjectData">
             <Size X="36.0000" Y="76.0000" />
             <AnchorPoint ScaleX="0.5000" ScaleY="0.5000" />
@@ -106,6 +117,16 @@
             <FontResource Type="Normal" Path="Marker Felt.ttf" Plist="" />
             <OutlineColor A="255" R="255" G="0" B="0" />
             <ShadowColor A="255" R="110" G="110" B="110" />
+          </AbstractNodeData>
+          <AbstractNodeData Name="music_bg" ActionTag="-1209031322" Tag="96" IconVisible="True" LeftMargin="58.9026" RightMargin="-58.9026" TopMargin="-37.8659" BottomMargin="37.8659" Volume="1.0000" Loop="True" ctype="SimpleAudioObjectData">
+            <Size X="0.0000" Y="0.0000" />
+            <AnchorPoint />
+            <Position X="58.9026" Y="37.8659" />
+            <Scale ScaleX="1.0000" ScaleY="1.0000" />
+            <CColor A="255" R="255" G="255" B="255" />
+            <PrePosition />
+            <PreSize X="0.0000" Y="0.0000" />
+            <FileData Type="Normal" Path="game music.mp3" Plist="" />
           </AbstractNodeData>
         </Children>
       </ObjectData>

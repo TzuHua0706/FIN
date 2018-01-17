@@ -7,7 +7,8 @@
 class StartScene : public cocos2d::Layer
 {
 private:
-	CButton * StartBtn;
+	cocos2d::Sprite *startbtn;
+	cocos2d::Rect  _BtnRect;
 public:
 
 	~StartScene();
